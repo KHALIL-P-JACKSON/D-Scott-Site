@@ -1,0 +1,32 @@
+.radix-reviews-section {
+  padding: 80px 16px;
+  background: var(--color-background);
+}
+
+.radix-review-card {
+  border-radius: var(--radius-4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.radix-review-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-3);
+}
+
+.review-quote-text {
+  line-height: 1.6;
+  color: var(--gray-12);
+}
+
+.review-author-row {
+  border-top: 1px solid var(--gray-a4);
+  padding-top: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radix-review-card,
+  .radix-review-card:hover {
+    transition: none;
+    transform: none;
+  }
+}

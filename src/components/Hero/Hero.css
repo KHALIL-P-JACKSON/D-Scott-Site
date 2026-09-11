@@ -1,0 +1,89 @@
+.radix-hero-section {
+  position: relative;
+  padding: 80px 16px 100px;
+  background: radial-gradient(circle at 85% 15%, var(--ruby-a3) 0%, var(--color-background) 70%);
+  overflow: hidden;
+}
+
+.radix-hero-title {
+  font-family: var(--font-serif);
+  font-size: 58px;
+  line-height: 1.1;
+  letter-spacing: -1px;
+}
+
+.title-highlight {
+  color: var(--ruby-10);
+  font-style: italic;
+}
+
+.radix-hero-desc {
+  color: var(--gray-11);
+  line-height: 1.6;
+  max-width: 540px;
+}
+
+.radix-hero-card {
+  background: var(--color-panel-solid);
+  box-shadow: var(--shadow-5);
+  border: 1px solid var(--gray-a4);
+  border-radius: var(--radius-5);
+}
+
+.live-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2b9348;
+  display: inline-block;
+  box-shadow: 0 0 0 3px rgba(43, 147, 72, 0.2);
+}
+
+.hero-feature-box {
+  padding: 16px;
+  border-radius: var(--radius-4);
+  transition: transform 0.2s ease;
+}
+
+.hero-feature-box:hover {
+  transform: translateY(-2px);
+}
+
+.feature-icon-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  margin-bottom: 4px;
+}
+
+.hair-theme {
+  background: var(--ruby-3);
+  color: var(--ruby-10);
+}
+
+.nail-theme {
+  background: var(--amber-3);
+  color: var(--amber-11);
+}
+
+.radix-client-quote {
+  background: var(--gray-2);
+  border-left: 3px solid var(--ruby-8);
+  padding: 14px;
+  border-radius: var(--radius-3);
+}
+
+@media (max-width: 1024px) {
+  .radix-hero-title {
+    font-size: 42px;
+  }
+}
+
+@media (max-width: 768px) {
+  .radix-hero-section {
+    padding: 48px 12px 64px;
+  }
+  .radix-hero-title {
+    font-size: 34px;
+  }
+}

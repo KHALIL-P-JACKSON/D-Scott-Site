@@ -1,0 +1,8 @@
+export { AnnouncementBar } from './AnnouncementBar/AnnouncementBar'
+export { Navbar } from './Navbar/Navbar'
+export { Hero } from './Hero/Hero'
+export { Services } from './Services/Services'
+export { Perks } from './Perks/Perks'
+export { Reviews } from './Reviews/Reviews'
+export { Booking } from './Booking/Booking'
+export { Footer } from './Footer/Footer'

@@ -1,0 +1,59 @@
+.radix-navbar {
+  position: sticky;
+  top: 0;
+  background: rgba(253, 251, 247, 0.94);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--gray-a4);
+  z-index: 100;
+  transition: all 0.3s ease;
+  padding: 0 16px;
+}
+
+.radix-brand {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+}
+
+.radix-brand-name {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--gray-12);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.radix-brand-tagline {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--ruby-9);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.nav-link {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--gray-11);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+  color: var(--ruby-10);
+}
+
+.nav-phone-link {
+  text-decoration: none;
+}
+
+@media (max-width: 768px) {
+  .radix-nav-links {
+    display: none;
+  }
+  .phone-text {
+    display: none;
+  }
+}
