@@ -25,7 +25,6 @@ interface BookingProps {
 
 export function Booking({ selectedService, onServiceChange, onClearSelectedService }: BookingProps) {
   const [submitted, setSubmitted] = useState(false)
-  const [demoMode, setDemoMode] = useState(false)
   const [serviceError, setServiceError] = useState('')
   const [formData, setFormData] = useState<BookingFormData>({
     name: '',
@@ -39,18 +38,6 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
 
   const currentService = selectedService
 
-  const persistBooking = (payload: BookingFormData) => {
-    try {
-      const existing = JSON.parse(localStorage.getItem('d-scott-booking-requests') ?? '[]')
-      const records = Array.isArray(existing) ? existing : []
-      records.push({ ...payload, createdAt: new Date().toISOString() })
-      localStorage.setItem('d-scott-booking-requests', JSON.stringify(records))
-      return true
-    } catch {
-      return false
-    }
-  }
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -60,21 +47,11 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
     }
 
     setServiceError('')
-    const payload = { ...formData, service: selectedService }
-
-    if (!persistBooking(payload)) {
-      setDemoMode(true)
-      setSubmitted(false)
-      return
-    }
-
-    setDemoMode(false)
     setSubmitted(true)
   }
 
   const handleReset = () => {
     setSubmitted(false)
-    setDemoMode(false)
     setServiceError('')
     setFormData({
       name: '',
@@ -167,22 +144,7 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
               p={{ initial: '5', md: '7' }}
               className="booking-form-wrapper"
             >
-              {demoMode ? (
-                <Callout.Root color="amber" size="3" variant="surface" className="booking-demo-callout">
-                  <Callout.Icon>
-                    <Calendar size={24} />
-                  </Callout.Icon>
-                  <Callout.Text>
-                    <Heading as="h4" size="4" mb="1">Demo Mode</Heading>
-                    <Text size="3" as="p" mb="4">
-                      This booking form is currently operating in demo mode until a real booking endpoint is connected.
-                    </Text>
-                    <Button variant="solid" color="amber" radius="full" onClick={handleReset}>
-                      Reset Demo Form
-                    </Button>
-                  </Callout.Text>
-                </Callout.Root>
-              ) : submitted ? (
+              {submitted ? (
                 <Callout.Root color="green" size="3" variant="surface" className="booking-success-callout">
                   <Callout.Icon>
                     <CheckCircle2 size={24} />
