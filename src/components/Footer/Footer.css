@@ -1,0 +1,51 @@
+.radix-footer {
+  background: #141213;
+  color: #a39b9c;
+  padding: 64px 16px 32px;
+  margin-top: auto;
+}
+
+.footer-brand-title {
+  color: #fff;
+  font-family: var(--font-serif);
+}
+
+.footer-brand-tagline {
+  color: var(--amber-9);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.footer-about-text {
+  color: #8c8384;
+  line-height: 1.6;
+}
+
+.footer-col-title {
+  color: #fff;
+  font-weight: 600;
+}
+
+.footer-link {
+  color: #a39b9c;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-link:hover {
+  color: #fff;
+}
+
+.footer-hour-row {
+  color: #a39b9c;
+}
+
+.footer-highlight {
+  color: var(--ruby-9);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.footer-legal {
+  font-size: 12px;
+}

@@ -1,0 +1,63 @@
+.radix-booking-section {
+  padding: 80px 16px;
+  background: var(--gray-a2);
+}
+
+.radix-booking-main-card {
+  border-radius: var(--radius-5);
+  overflow: hidden;
+  padding: 0;
+  box-shadow: var(--shadow-5);
+  border: 1px solid var(--gray-a4);
+}
+
+.booking-side-info {
+  background: linear-gradient(145deg, #1c191a 0%, #312b2d 100%);
+  color: #fff;
+  padding: 48px;
+}
+
+.side-info-heading {
+  color: #fff;
+  font-family: var(--font-serif);
+}
+
+.side-info-desc {
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+}
+
+.side-info-icon {
+  color: var(--ruby-9);
+  margin-top: 2px;
+}
+
+.side-info-label {
+  color: #fff;
+}
+
+.side-info-val {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.side-info-tip {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-radius: var(--radius-3);
+  padding: 14px;
+}
+
+.booking-form-wrapper {
+  background: var(--color-panel-solid);
+}
+
+.booking-success-callout {
+  padding: 24px;
+}
+
+@media (max-width: 768px) {
+  .booking-side-info {
+    padding: 32px 20px;
+  }
+}

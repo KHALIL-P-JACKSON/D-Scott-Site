@@ -1,0 +1,44 @@
+.radix-services-section {
+  padding: 80px 16px;
+  background: var(--color-background);
+}
+
+.radix-section-heading {
+  font-family: var(--font-serif);
+  letter-spacing: -0.5px;
+}
+
+.radix-service-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  border-radius: var(--radius-4);
+}
+
+.radix-service-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-4);
+  border-color: var(--ruby-a6);
+}
+
+.radix-price-tag {
+  color: var(--ruby-10);
+  font-family: var(--font-serif);
+  white-space: nowrap;
+}
+
+.service-desc-text {
+  line-height: 1.5;
+}
+
+.radix-service-cta {
+  cursor: pointer;
+  font-weight: 600;
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radix-service-card,
+  .radix-service-card:hover {
+    transition: none;
+    transform: none;
+  }
+}

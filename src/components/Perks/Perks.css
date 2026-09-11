@@ -1,0 +1,54 @@
+.radix-perks-section {
+  padding: 80px 16px;
+  background: var(--gray-a2);
+}
+
+.radix-perk-card {
+  padding: 24px 16px;
+  border-radius: var(--radius-4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.radix-perk-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-3);
+}
+
+.perk-icon-bubble {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  box-shadow: var(--shadow-1);
+}
+
+.bubble-green {
+  background: var(--green-3);
+  color: var(--green-10);
+}
+
+.bubble-ruby {
+  background: var(--ruby-3);
+  color: var(--ruby-10);
+}
+
+.bubble-amber {
+  background: var(--amber-3);
+  color: var(--amber-10);
+}
+
+.bubble-purple {
+  background: var(--purple-3);
+  color: var(--purple-10);
+}
+
+.perk-desc-text {
+  line-height: 1.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radix-perk-card,
+  .radix-perk-card:hover {
+    transition: none;
+    transform: none;
+  }
+}
