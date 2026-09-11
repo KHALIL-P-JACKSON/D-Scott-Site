@@ -17,7 +17,7 @@ export function Hero() {
               </Flex>
 
               <Heading as="h1" className="radix-hero-title">
-                Elevate Your Hair. <span className="title-highlight">Pamper Your Nails.</span>
+                Hair and Nails. <span className="title-highlight">Pamper Your Nails.</span>
               </Heading>
 
               <Text size="4" className="radix-hero-desc">
@@ -73,7 +73,7 @@ export function Hero() {
               <Flex direction="column" gap="4">
                 <Flex justify="between" align="center">
                   <Badge color="ruby" variant="surface" size="2" radius="full">
-                    Today at D. Scott
+                    Today at D'Luxe Beauty
                   </Badge>
                   <Flex align="center" gap="2">
                     <Clock size={16} color="var(--gray-11)" />
@@ -113,7 +113,7 @@ export function Hero() {
                   <Flex gap="2" align="start">
                     <Clock size={16} style={{ marginTop: '2px', color: 'var(--ruby-9)', flexShrink: 0 }} />
                     <Text size="2" style={{ fontStyle: 'italic' }}>
-                      “D. Scott is the only salon I trust with both my blonde highlights and my BIAB overlay. Impeccable attention to detail!”
+                      “D'Luxe Beauty is the only salon I trust with both my blonde highlights and my BIAB overlay. Impeccable attention to detail!”
                     </Text>
                   </Flex>
                   <Text size="1" weight="bold" mt="2" style={{ textAlign: 'right' }}>

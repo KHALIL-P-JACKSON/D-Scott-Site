@@ -15,7 +15,7 @@ export function Reviews() {
             Loved by Our Community
           </Heading>
           <Text size="3" color="gray" style={{ maxWidth: '600px' }}>
-            Genuine reviews from neighbors and loyal clients who trust D. Scott with their hair and nails.
+            Genuine reviews from neighbors and loyal clients who trust D'Luxe Beauty with their hair and nails.
           </Text>
         </Flex>
 
