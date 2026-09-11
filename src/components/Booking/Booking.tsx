@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Container,
   Grid,
@@ -19,36 +19,75 @@ import './Booking.css'
 
 interface BookingProps {
   selectedService: string
+  onServiceChange?: (service: string) => void
   onClearSelectedService?: () => void
 }
 
-export function Booking({ selectedService, onClearSelectedService }: BookingProps) {
+export function Booking({ selectedService, onServiceChange, onClearSelectedService }: BookingProps) {
   const [submitted, setSubmitted] = useState(false)
-  const [customService, setCustomService] = useState<string | null>(null)
-  const [formData, setFormData] = useState<Omit<BookingFormData, 'service'>>({
+  const [demoMode, setDemoMode] = useState(false)
+  const [serviceError, setServiceError] = useState('')
+  const [formData, setFormData] = useState<BookingFormData>({
     name: '',
     phone: '',
     email: '',
+    service: selectedService,
     date: '',
     time: 'morning',
     notes: '',
   })
 
-  // Derive active service from user selection, or falling back to the prop passed from clicking "Book This Service"
-  const currentService = customService !== null ? customService : selectedService
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      service: selectedService,
+    }))
+  }, [selectedService])
+
+  const currentService = selectedService
+
+  const persistBooking = (payload: BookingFormData) => {
+    try {
+      const existing = JSON.parse(localStorage.getItem('d-scott-booking-requests') ?? '[]')
+      const records = Array.isArray(existing) ? existing : []
+      records.push({ ...payload, createdAt: new Date().toISOString() })
+      localStorage.setItem('d-scott-booking-requests', JSON.stringify(records))
+      return true
+    } catch {
+      return false
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!selectedService.trim()) {
+      setServiceError('Please select a service before submitting.')
+      return
+    }
+
+    setServiceError('')
+    const payload = { ...formData, service: selectedService }
+
+    if (!persistBooking(payload)) {
+      setDemoMode(true)
+      setSubmitted(false)
+      return
+    }
+
+    setDemoMode(false)
     setSubmitted(true)
   }
 
   const handleReset = () => {
     setSubmitted(false)
-    setCustomService(null)
+    setDemoMode(false)
+    setServiceError('')
     setFormData({
       name: '',
       phone: '',
       email: '',
+      service: '',
       date: '',
       time: 'morning',
       notes: '',
@@ -135,7 +174,22 @@ export function Booking({ selectedService, onClearSelectedService }: BookingProp
               p={{ initial: '5', md: '7' }}
               className="booking-form-wrapper"
             >
-              {submitted ? (
+              {demoMode ? (
+                <Callout.Root color="amber" size="3" variant="surface" className="booking-demo-callout">
+                  <Callout.Icon>
+                    <Calendar size={24} />
+                  </Callout.Icon>
+                  <Callout.Text>
+                    <Heading as="h4" size="4" mb="1">Demo Mode</Heading>
+                    <Text size="3" as="p" mb="4">
+                      This booking form is currently operating in demo mode until a real booking endpoint is connected.
+                    </Text>
+                    <Button variant="solid" color="amber" radius="full" onClick={handleReset}>
+                      Reset Demo Form
+                    </Button>
+                  </Callout.Text>
+                </Callout.Root>
+              ) : submitted ? (
                 <Callout.Root color="green" size="3" variant="surface" className="booking-success-callout">
                   <Callout.Icon>
                     <CheckCircle2 size={24} />
@@ -144,7 +198,7 @@ export function Booking({ selectedService, onClearSelectedService }: BookingProp
                     <Heading as="h4" size="4" mb="1">Appointment Request Received!</Heading>
                     <Text size="3" as="p" mb="2">
                       Thank you, <strong>{formData.name}</strong>! We have received your request for{' '}
-                      <strong>{currentService || 'your custom service'}</strong>.
+                      <strong>{currentService || 'your selected service'}</strong>.
                     </Text>
                     <Text size="2" color="gray" as="p" mb="4">
                       Our front desk will contact you at <strong>{formData.phone}</strong> shortly to confirm your booking time.
@@ -158,8 +212,9 @@ export function Booking({ selectedService, onClearSelectedService }: BookingProp
                 <form onSubmit={handleSubmit}>
                   <Flex direction="column" gap="4">
                     <Flex direction="column" gap="1">
-                      <Text as="label" size="2" weight="bold">Full Name *</Text>
+                      <Text as="label" htmlFor="booking-name" size="2" weight="bold">Full Name *</Text>
                       <TextField.Root
+                        id="booking-name"
                         size="3"
                         required
                         placeholder="e.g. Ashley Davis"
@@ -170,8 +225,9 @@ export function Booking({ selectedService, onClearSelectedService }: BookingProp
 
                     <Grid columns={{ initial: '1', sm: '2' }} gap="3">
                       <Flex direction="column" gap="1">
-                        <Text as="label" size="2" weight="bold">Phone Number *</Text>
+                        <Text as="label" htmlFor="booking-phone" size="2" weight="bold">Phone Number *</Text>
                         <TextField.Root
+                          id="booking-phone"
                           size="3"
                           type="tel"
                           required
@@ -181,8 +237,9 @@ export function Booking({ selectedService, onClearSelectedService }: BookingProp
                         />
                       </Flex>
                       <Flex direction="column" gap="1">
-                        <Text as="label" size="2" weight="bold">Email Address</Text>
+                        <Text as="label" htmlFor="booking-email" size="2" weight="bold">Email Address</Text>
                         <TextField.Root
+                          id="booking-email"
                           size="3"
                           type="email"
                           placeholder="ashley@example.com"
@@ -193,13 +250,20 @@ export function Booking({ selectedService, onClearSelectedService }: BookingProp
                     </Grid>
 
                     <Flex direction="column" gap="1">
-                      <Text as="label" size="2" weight="bold">Select Service *</Text>
+                      <Text as="label" id="booking-service-label" size="2" weight="bold">Select Service *</Text>
                       <Select.Root
                         size="3"
-                        value={currentService || 'none'}
-                        onValueChange={(val) => setCustomService(val === 'none' ? '' : val)}
+                        value={selectedService || undefined}
+                        onValueChange={(val) => {
+                          const nextService = val === 'none' ? '' : val
+                          if (onServiceChange) {
+                            onServiceChange(nextService)
+                          }
+                          setFormData((prev) => ({ ...prev, service: nextService }))
+                          setServiceError('')
+                        }}
                       >
-                        <Select.Trigger placeholder="Choose Hair or Nail Service" />
+                        <Select.Trigger aria-labelledby="booking-service-label" placeholder="Choose Hair or Nail Service" />
                         <Select.Content position="popper">
                           <Select.Group>
                             <Select.Label>Hair Studio</Select.Label>
@@ -224,12 +288,16 @@ export function Booking({ selectedService, onClearSelectedService }: BookingProp
                           </Select.Group>
                         </Select.Content>
                       </Select.Root>
+                      {serviceError ? (
+                        <Text size="2" color="red">{serviceError}</Text>
+                      ) : null}
                     </Flex>
 
                     <Grid columns={{ initial: '1', sm: '2' }} gap="3">
                       <Flex direction="column" gap="1">
-                        <Text as="label" size="2" weight="bold">Preferred Date *</Text>
+                        <Text as="label" htmlFor="booking-date" size="2" weight="bold">Preferred Date *</Text>
                         <TextField.Root
+                          id="booking-date"
                           size="3"
                           type="date"
                           required
@@ -244,7 +312,7 @@ export function Booking({ selectedService, onClearSelectedService }: BookingProp
                           value={formData.time}
                           onValueChange={(val) => setFormData({ ...formData, time: val })}
                         >
-                          <Select.Trigger />
+                          <Select.Trigger aria-label="Preferred time" />
                           <Select.Content position="popper">
                             <Select.Item value="morning">Morning (9am - 12pm)</Select.Item>
                             <Select.Item value="afternoon">Afternoon (12pm - 4pm)</Select.Item>
@@ -255,8 +323,9 @@ export function Booking({ selectedService, onClearSelectedService }: BookingProp
                     </Grid>
 
                     <Flex direction="column" gap="1">
-                      <Text as="label" size="2" weight="bold">Notes / Special Requests (Optional)</Text>
+                      <Text as="label" htmlFor="booking-notes" size="2" weight="bold">Notes / Special Requests (Optional)</Text>
                       <TextArea
+                        id="booking-notes"
                         size="3"
                         rows={3}
                         placeholder="Share any hair length details, nail inspo ideas, or coupon codes like GLOW15..."

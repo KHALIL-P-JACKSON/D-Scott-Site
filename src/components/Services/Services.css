@@ -34,3 +34,11 @@
   font-weight: 600;
   width: 100%;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .radix-service-card,
+  .radix-service-card:hover {
+    transition: none;
+    transform: none;
+  }
+}

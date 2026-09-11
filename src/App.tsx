@@ -22,6 +22,10 @@ function App() {
     }
   }
 
+  const handleServiceChange = (service: string) => {
+    setSelectedService(service)
+  }
+
   return (
     <div className="page-wrapper">
       <AnnouncementBar />
@@ -33,6 +37,7 @@ function App() {
         <Reviews />
         <Booking
           selectedService={selectedService}
+          onServiceChange={handleServiceChange}
           onClearSelectedService={() => setSelectedService('')}
         />
       </main>

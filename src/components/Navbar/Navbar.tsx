@@ -23,18 +23,18 @@ export function Navbar() {
 
           {/* Action Group */}
           <Flex align="center" gap="4">
-            <a href="tel:5552345678" className="nav-phone-link">
-              <Button variant="ghost" color="gray" size="2" highContrast>
+            <Button asChild variant="ghost" color="gray" size="2" highContrast>
+              <a href="tel:5552345678" className="nav-phone-link">
                 <Phone size={15} />
                 <span className="phone-text">(555) 234-5678</span>
-              </Button>
-            </a>
-            <a href="#booking">
-              <Button size="3" variant="solid" color="ruby" radius="full" highContrast>
+              </a>
+            </Button>
+            <Button asChild size="3" variant="solid" color="ruby" radius="full" highContrast>
+              <a href="#booking">
                 <Calendar size={16} />
                 Book Appointment
-              </Button>
-            </a>
+              </a>
+            </Button>
           </Flex>
         </Flex>
       </Container>

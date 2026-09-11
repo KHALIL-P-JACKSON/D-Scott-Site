@@ -44,3 +44,11 @@
 .perk-desc-text {
   line-height: 1.5;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .radix-perk-card,
+  .radix-perk-card:hover {
+    transition: none;
+    transform: none;
+  }
+}

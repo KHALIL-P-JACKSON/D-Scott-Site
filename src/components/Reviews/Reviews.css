@@ -22,3 +22,11 @@
   border-top: 1px solid var(--gray-a4);
   padding-top: 12px;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .radix-review-card,
+  .radix-review-card:hover {
+    transition: none;
+    transform: none;
+  }
+}

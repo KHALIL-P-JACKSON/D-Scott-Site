@@ -25,16 +25,16 @@ export function Hero() {
               </Text>
 
               <Flex gap="3" wrap="wrap" pt="2">
-                <a href="#booking" style={{ textDecoration: 'none' }}>
-                  <Button size="4" color="ruby" variant="solid" radius="full" highContrast>
+                <Button asChild size="4" color="ruby" variant="solid" radius="full" highContrast>
+                  <a href="#booking" style={{ textDecoration: 'none' }}>
                     Book Your Appointment <ArrowRight size={18} />
-                  </Button>
-                </a>
-                <a href="#services" style={{ textDecoration: 'none' }}>
-                  <Button size="4" color="gray" variant="outline" radius="full">
+                  </a>
+                </Button>
+                <Button asChild size="4" color="gray" variant="outline" radius="full">
+                  <a href="#services" style={{ textDecoration: 'none' }}>
                     Explore Services & Pricing
-                  </Button>
-                </a>
+                  </a>
+                </Button>
               </Flex>
 
               <Separator size="4" my="3" />
@@ -76,9 +76,9 @@ export function Hero() {
                     Today at D. Scott
                   </Badge>
                   <Flex align="center" gap="2">
-                    <span className="live-status-dot"></span>
-                    <Text size="2" weight="bold" color="green">
-                      Open Today Until 7:00 PM
+                    <Clock size={16} color="var(--gray-11)" />
+                    <Text size="2" weight="bold" color="gray">
+                      Studio hours: Mon–Fri 9:00 AM – 7:00 PM
                     </Text>
                   </Flex>
                 </Flex>
