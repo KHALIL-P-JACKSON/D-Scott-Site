@@ -1,0 +1,18 @@
+.announcement-bar-wrapper {
+  background: linear-gradient(135deg, #7a2238 0%, #a83251 100%);
+  color: #fff;
+  padding: 8px 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.announcement-content {
+  text-align: center;
+}
+
+.announcement-text {
+  color: #fff;
+}
+
+.announcement-sub {
+  color: rgba(255, 255, 255, 0.85);
+}
