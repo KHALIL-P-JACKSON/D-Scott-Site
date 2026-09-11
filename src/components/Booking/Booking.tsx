@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Container,
   Grid,
@@ -36,13 +36,6 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
     time: 'morning',
     notes: '',
   })
-
-  useEffect(() => {
-    setFormData((prev) => ({
-      ...prev,
-      service: selectedService,
-    }))
-  }, [selectedService])
 
   const currentService = selectedService
 
