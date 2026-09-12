@@ -62,7 +62,7 @@
     display: none;
   }
 
-  .radix-navbar > .rt-Container {
+  .radix-navbar-row {
     flex-wrap: wrap;
     row-gap: 8px;
   }
