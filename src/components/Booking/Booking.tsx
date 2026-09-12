@@ -88,7 +88,7 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
                 </Flex>
 
                 <Heading as="h3" size="7" className="side-info-heading">
-                  Visit D. Scott Studio
+                  Visit D'Luxe Beauty Studio
                 </Heading>
                 <Text size="3" className="side-info-desc">
                   Select your service and preferred date. Our concierge team will reach out promptly to confirm your slot.
