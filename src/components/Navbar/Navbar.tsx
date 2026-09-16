@@ -6,10 +6,10 @@ export function Navbar() {
   return (
     <nav className="radix-navbar">
       <Container size="4">
-        <Flex align="center" justify="between" py="3">
+        <Flex align="center" justify="between" py="3" className="radix-navbar-row">
           {/* Brand */}
           <a href="#" className="radix-brand">
-            <Text className="radix-brand-name">D. Scott</Text>
+            <Text className="radix-brand-name">D'Luxe Beauty</Text>
             <span className="radix-brand-tagline">Hair & Nail Studio</span>
           </a>
 

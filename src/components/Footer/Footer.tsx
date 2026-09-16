@@ -11,7 +11,7 @@ export function Footer() {
           <Flex direction="column" gap="3">
             <Flex direction="column">
               <Heading as="h4" size="5" className="footer-brand-title">
-                D. Scott
+                D'Luxe Beauty
               </Heading>
               <Text size="1" weight="bold" className="footer-brand-tagline">
                 Hair & Nail Studio
@@ -78,7 +78,7 @@ export function Footer() {
 
         <Flex justify="between" align="center" wrap="wrap" gap="3" className="footer-bottom-bar">
           <Text size="1" color="gray">
-            © {new Date().getFullYear()} D. Scott Hair & Nail Studio. All rights reserved.
+            © {new Date().getFullYear()} D'Luxe Beauty Hair & Nail Studio. All rights reserved.
           </Text>
           <Flex gap="4">
             <a href="#" className="footer-link footer-legal">Privacy Policy</a>

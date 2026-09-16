@@ -50,10 +50,20 @@
 }
 
 @media (max-width: 768px) {
+  .radix-navbar {
+    overflow-x: hidden;
+  }
+
   .radix-nav-links {
     display: none;
   }
+
   .phone-text {
     display: none;
+  }
+
+  .radix-navbar-row {
+    flex-wrap: wrap;
+    row-gap: 8px;
   }
 }
