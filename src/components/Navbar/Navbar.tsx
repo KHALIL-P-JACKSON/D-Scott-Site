@@ -10,7 +10,7 @@ export function Navbar() {
           {/* Brand */}
           <a href="#" className="radix-brand">
             <Text className="radix-brand-name">D'Luxe Beauty</Text>
-            <span className="radix-brand-tagline">Hair & Nail Studio</span>
+            <span className="radix-brand-tagline">Nail Studio</span>
           </a>
 
           {/* Links */}

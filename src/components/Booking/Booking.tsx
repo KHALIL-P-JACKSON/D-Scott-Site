@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import {
   Container,
   Grid,
@@ -14,6 +14,7 @@ import {
   Callout,
 } from '@radix-ui/themes'
 import { MapPin, Clock, Phone, CheckCircle2, Calendar, Sparkles } from 'lucide-react'
+import { SERVICE_OPTION_GROUPS } from '../../data/services'
 import type { BookingFormData } from '../../types'
 import './Booking.css'
 
@@ -218,29 +219,21 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
                           setServiceError('')
                         }}
                       >
-                        <Select.Trigger aria-labelledby="booking-service-label" placeholder="Choose Hair or Nail Service" />
+                        <Select.Trigger aria-labelledby="booking-service-label" placeholder="Choose Nail Service" />
                         <Select.Content position="popper">
-                          <Select.Group>
-                            <Select.Label>Hair Studio</Select.Label>
-                            <Select.Item value="Signature Haircut & Blowout">Signature Haircut & Blowout ($65+)</Select.Item>
-                            <Select.Item value="Custom Balayage & Gloss">Custom Balayage & Gloss ($175+)</Select.Item>
-                            <Select.Item value="Hydrating Silk Press">Hydrating Silk Press ($85+)</Select.Item>
-                            <Select.Item value="Keratin Smoothing Therapy">Keratin Smoothing Therapy ($195+)</Select.Item>
-                          </Select.Group>
-                          <Select.Separator />
-                          <Select.Group>
-                            <Select.Label>Nail Lounge</Select.Label>
-                            <Select.Item value="Deluxe Gel Manicure">Deluxe Gel Manicure ($45)</Select.Item>
-                            <Select.Item value="BIAB Builder Gel Overlay">BIAB Builder Gel Overlay ($65)</Select.Item>
-                            <Select.Item value="Full Set Acrylics & Custom Art">Full Set Acrylics & Custom Art ($75+)</Select.Item>
-                            <Select.Item value="Aromatherapy Spa Pedicure">Aromatherapy Spa Pedicure ($55)</Select.Item>
-                          </Select.Group>
-                          <Select.Separator />
-                          <Select.Group>
-                            <Select.Label>Combo Packages</Select.Label>
-                            <Select.Item value="The 'Glow Up' Luxury Day">The "Glow Up" Luxury Day ($220)</Select.Item>
-                            <Select.Item value="Weekly Glam Express">Weekly Glam Express ($95)</Select.Item>
-                          </Select.Group>
+                          {SERVICE_OPTION_GROUPS.map((group, index) => (
+                            <Fragment key={group.label}>
+                              {index > 0 ? <Select.Separator /> : null}
+                              <Select.Group>
+                                <Select.Label>{group.label}</Select.Label>
+                                {group.options.map((option) => (
+                                  <Select.Item key={option.value} value={option.value}>
+                                    {option.label}
+                                  </Select.Item>
+                                ))}
+                              </Select.Group>
+                            </Fragment>
+                          ))}
                         </Select.Content>
                       </Select.Root>
                       {serviceError ? (
@@ -283,7 +276,7 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
                         id="booking-notes"
                         size="3"
                         rows={3}
-                        placeholder="Share any hair length details, nail inspo ideas, or coupon codes like GLOW15..."
+                        placeholder="Share your nail length, shape, art inspo, or coupon codes like GLOW15..."
                         value={formData.notes}
                         onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                       />

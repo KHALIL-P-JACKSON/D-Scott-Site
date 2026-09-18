@@ -1,4 +1,4 @@
-import { Sparkles, Star, Scissors, Heart, Clock, ArrowRight, ShieldCheck } from 'lucide-react'
+import { Sparkles, Star, Brush, Gem, Heart, Clock, ArrowRight, ShieldCheck } from 'lucide-react'
 import './Hero.css'
 
 export function Hero() {
@@ -9,15 +9,15 @@ export function Hero() {
           <div className="hero-copy">
             <div className="hero-badge">
               <Sparkles size={14} />
-              <span>Premier Local Hair &amp; Nail Lounge</span>
+              <span>Premier Local Nail Studio</span>
             </div>
 
             <h1 className="radix-hero-title">
-              Hair and Nail. <span className="title-highlight">Pamper Your Nails.</span>
+              Acrylics, Gel &amp; Artistry. <span className="title-highlight">Pamper Your Nails.</span>
             </h1>
 
             <p className="radix-hero-desc">
-              Experience bespoke hair styling, vibrant color transformations, and artisan nail enhancements in an upscale, boutique environment crafted for your glow up.
+              Experience custom acrylic sets in every length, glossy gel manicures, and artisan nail art in an upscale, boutique environment crafted for your glow up.
             </p>
 
             <div className="hero-cta-group">
@@ -54,7 +54,7 @@ export function Hero() {
                   <Heart size={18} color="var(--ruby-9)" />
                   <strong>10+ Years</strong>
                 </div>
-                <span>Master Stylists &amp; Artists</span>
+                <span>Master Nail Artists</span>
               </div>
             </div>
           </div>
@@ -71,19 +71,19 @@ export function Hero() {
 
               <div className="hero-feature-grid">
                 <div className="hero-feature-box">
-                  <div className="feature-icon-wrapper hair-theme">
-                    <Scissors size={22} />
+                  <div className="feature-icon-wrapper acrylic-theme">
+                    <Brush size={22} />
                   </div>
-                  <h4>Hair Studio</h4>
-                  <p>Cuts, balayage, silk press, treatments &amp; gloss</p>
+                  <h4>Acrylic Sets &amp; Fill Ins</h4>
+                  <p>Short to XX long sculpted sets and flawless rebalances</p>
                 </div>
 
                 <div className="hero-feature-box">
                   <div className="feature-icon-wrapper nail-theme">
-                    <Sparkles size={22} />
+                    <Gem size={22} />
                   </div>
-                  <h4>Nail Lounge</h4>
-                  <p>BIAB gel, custom acrylics, chrome &amp; pedicures</p>
+                  <h4>Gel, Press-Ons &amp; Art</h4>
+                  <p>Gel manicures, custom press-ons, French tips &amp; chrome</p>
                 </div>
               </div>
 
@@ -91,7 +91,7 @@ export function Hero() {
                 <div className="quote-row">
                   <Clock size={16} style={{ marginTop: '2px', color: 'var(--ruby-9)', flexShrink: 0 }} />
                   <p>
-                    “D'Luxe Beauty is the only salon I trust with both my blonde highlights and my BIAB overlay. Impeccable attention to detail!”
+                    “D'Luxe Beauty is the only studio I trust with my nails. My acrylic fills always look flawless and last weeks without a single lift!”
                   </p>
                 </div>
                 <p className="quote-author">— Jessica M., Regular Client</p>
