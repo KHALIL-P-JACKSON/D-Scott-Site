@@ -2,6 +2,16 @@ version: 2
 updates:
   - package-ecosystem: "npm"
     directory: "/"
+    # Version-update PRs are opened against develop (the integration branch).
+    # Note: Dependabot security updates always open against the default branch (main).
+    target-branch: "develop"
     schedule:
-      interval: "weekly"
+      # Twice a week: Mondays and Thursdays at 08:00 UTC (default timezone).
+      interval: "cron"
+      cronjob: "0 8 * * 1,4"
     open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
