@@ -2,20 +2,11 @@ import { useState } from 'react'
 import { Container, Flex, Heading, Text, Badge, Card, Button, Tabs, Grid, Box } from '@radix-ui/themes'
 import { Clock, ArrowRight } from 'lucide-react'
 import { SERVICES, SERVICE_CATEGORIES, getDefaultServiceOption } from '../../data/services'
-import type { ServiceItem } from '../../types'
+import { getCtaLabel } from '../../lib/services'
 import './Services.css'
 
 interface ServicesProps {
   onSelectService: (title: string) => void
-}
-
-function getCtaLabel(service: ServiceItem) {
-  if (service.category === 'add-ons') {
-    return 'Add To Appointment'
-  }
-
-  const [firstVariant] = service.variants ?? []
-  return firstVariant ? `Book from ${firstVariant.price}` : 'Book This Service'
 }
 
 export function Services({ onSelectService }: ServicesProps) {
