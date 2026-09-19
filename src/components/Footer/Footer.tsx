@@ -14,11 +14,11 @@ export function Footer() {
                 D'Luxe Beauty
               </Heading>
               <Text size="1" weight="bold" className="footer-brand-tagline">
-                Hair & Nail Studio
+                Nail Studio
               </Text>
             </Flex>
             <Text size="2" className="footer-about-text">
-              Your premier local boutique for healthy hair transformations, customized nail artistry, and soothing self-care.
+              Your premier local boutique for sculpted acrylic sets, flawless fill ins, custom press-ons, and soothing self-care.
             </Text>
           </Flex>
 
@@ -28,8 +28,8 @@ export function Footer() {
               Quick Links
             </Heading>
             <Flex direction="column" gap="2">
-              <a href="#services" className="footer-link">Hair Studio Services</a>
-              <a href="#services" className="footer-link">Nail Lounge & Art</a>
+              <a href="#services" className="footer-link">Acrylic Sets & Fill Ins</a>
+              <a href="#services" className="footer-link">Gel, Press-Ons & Add-Ons</a>
               <a href="#booking" className="footer-link">Book Appointment</a>
               <a href="#why-us" className="footer-link">Studio Sanitation</a>
             </Flex>
@@ -78,7 +78,7 @@ export function Footer() {
 
         <Flex justify="between" align="center" wrap="wrap" gap="3" className="footer-bottom-bar">
           <Text size="1" color="gray">
-            © {new Date().getFullYear()} D'Luxe Beauty Hair & Nail Studio. All rights reserved.
+            © {new Date().getFullYear()} D'Luxe Beauty Nail Studio. All rights reserved.
           </Text>
           <Flex gap="4">
             <a href="#" className="footer-link footer-legal">Privacy Policy</a>

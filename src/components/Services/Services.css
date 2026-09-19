@@ -35,6 +35,51 @@
   width: 100%;
 }
 
+.radix-tabs-root .services-tab-list {
+  flex-wrap: wrap;
+  justify-content: center;
+  height: auto;
+  padding: 3px;
+  max-width: 100%;
+}
+
+.service-variant-list {
+  border-top: 1px dashed var(--gray-a5);
+  padding-top: 10px;
+}
+
+.service-variant-row {
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--gray-a4);
+}
+
+.service-variant-row:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.service-variant-label {
+  color: var(--gray-11);
+}
+
+.service-variant-price {
+  color: var(--ruby-10);
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .radix-tabs-root .services-tab-list {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .radix-tabs-root .services-tab-list::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .radix-service-card,
   .radix-service-card:hover {

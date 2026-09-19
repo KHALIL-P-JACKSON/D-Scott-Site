@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Container, Flex, Heading, Text, Badge, Card, Button, Tabs, Grid, Box } from '@radix-ui/themes'
 import { Clock, ArrowRight } from 'lucide-react'
-import { SERVICES } from '../../data/services'
+import { SERVICES, SERVICE_CATEGORIES, getDefaultServiceOption } from '../../data/services'
+import { getCtaLabel } from '../../lib/services'
 import './Services.css'
 
 interface ServicesProps {
@@ -25,70 +26,93 @@ export function Services({ onSelectService }: ServicesProps) {
             Menu & Pricing
           </Badge>
           <Heading as="h2" size="8" className="radix-section-heading">
-            Artisan Hair & Nail Services
+            Acrylic, Gel &amp; Nail Artistry
           </Heading>
           <Text size="3" color="gray" style={{ maxWidth: '600px' }}>
-            Every appointment includes an individualized consultation and premium care products to ensure radiant, healthy results.
+            Every appointment includes an individualized consultation and premium, non-toxic products. Acrylic set and fill in pricing is based on the nail length you choose.
           </Text>
         </Flex>
 
         {/* Radix Tabs Component */}
         <Tabs.Root value={activeTab} onValueChange={setActiveTab} className="radix-tabs-root">
           <Flex justify="center" mb="6">
-            <Tabs.List size="2" highContrast>
+            <Tabs.List size="2" highContrast className="services-tab-list">
               <Tabs.Trigger value="all">All Services</Tabs.Trigger>
-              <Tabs.Trigger value="hair">Hair Studio</Tabs.Trigger>
-              <Tabs.Trigger value="nails">Nail Lounge</Tabs.Trigger>
-              <Tabs.Trigger value="packages">Combo Packages</Tabs.Trigger>
+              {SERVICE_CATEGORIES.map((category) => (
+                <Tabs.Trigger key={category.id} value={category.id}>
+                  {category.label}
+                </Tabs.Trigger>
+              ))}
             </Tabs.List>
           </Flex>
 
           <Tabs.Content value={activeTab}>
             <Grid columns={{ initial: '1', sm: '2', md: '3' }} gap="5">
-              {filteredServices.map((service) => (
-                <Card key={service.id} size="3" variant="classic" className="radix-service-card">
-                  <Flex direction="column" justify="between" style={{ height: '100%' }} gap="4">
-                    <Box>
-                      <Flex justify="between" align="start" gap="2" mb="2">
-                        <Heading as="h3" size="4" weight="bold">
-                          {service.title}
-                        </Heading>
-                        <Text size="5" weight="bold" className="radix-price-tag">
-                          {service.price}
+              {filteredServices.map((service) => {
+                const category = SERVICE_CATEGORIES.find((item) => item.id === service.category)
+
+                return (
+                  <Card key={service.id} size="3" variant="classic" className="radix-service-card">
+                    <Flex direction="column" justify="between" style={{ height: '100%' }} gap="4">
+                      <Box>
+                        <Flex justify="between" align="start" gap="2" mb="2">
+                          <Heading as="h3" size="4" weight="bold">
+                            {service.title}
+                          </Heading>
+                          <Text size="5" weight="bold" className="radix-price-tag">
+                            {service.price}
+                          </Text>
+                        </Flex>
+
+                        <Flex align="center" gap="2" mb="3" wrap="wrap">
+                          <Badge color="gray" variant="surface" size="1">
+                            <Clock size={11} /> {service.duration}
+                          </Badge>
+                          <Badge color={category?.color ?? 'ruby'} variant="soft" size="1">
+                            {category?.label ?? service.category}
+                          </Badge>
+                        </Flex>
+
+                        <Text size="2" color="gray" className="service-desc-text">
+                          {service.desc}
                         </Text>
-                      </Flex>
 
-                      <Flex align="center" gap="2" mb="3">
-                        <Badge color="gray" variant="surface" size="1">
-                          <Clock size={11} /> {service.duration}
-                        </Badge>
-                        <Badge
-                          color={service.category === 'hair' ? 'ruby' : service.category === 'nails' ? 'amber' : 'purple'}
-                          variant="soft"
-                          size="1"
-                        >
-                          {service.category}
-                        </Badge>
-                      </Flex>
+                        {service.variants ? (
+                          <Flex direction="column" gap="2" mt="3" className="service-variant-list">
+                            {service.variants.map((variant) => (
+                              <Flex
+                                key={variant.label}
+                                justify="between"
+                                align="center"
+                                gap="2"
+                                className="service-variant-row"
+                              >
+                                <Text size="2" className="service-variant-label">
+                                  {variant.label}
+                                </Text>
+                                <Text size="2" weight="bold" className="service-variant-price">
+                                  {variant.price}
+                                </Text>
+                              </Flex>
+                            ))}
+                          </Flex>
+                        ) : null}
+                      </Box>
 
-                      <Text size="2" color="gray" className="service-desc-text">
-                        {service.desc}
-                      </Text>
-                    </Box>
-
-                    <Button
-                      variant="soft"
-                      color="ruby"
-                      size="2"
-                      radius="medium"
-                      className="radix-service-cta"
-                      onClick={() => onSelectService(service.title)}
-                    >
-                      Book This Service <ArrowRight size={14} />
-                    </Button>
-                  </Flex>
-                </Card>
-              ))}
+                      <Button
+                        variant="soft"
+                        color="ruby"
+                        size="2"
+                        radius="medium"
+                        className="radix-service-cta"
+                        onClick={() => onSelectService(getDefaultServiceOption(service))}
+                      >
+                        {getCtaLabel(service)} <ArrowRight size={14} />
+                      </Button>
+                    </Flex>
+                  </Card>
+                )
+              })}
             </Grid>
           </Tabs.Content>
         </Tabs.Root>

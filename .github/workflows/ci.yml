@@ -1,17 +1,25 @@
-name: CI - Lint & Build
+# The single source of truth for what a change must pass. Pull requests run this
+# workflow directly, and `static.yml` calls it before it is allowed to publish to
+# GitHub Pages, so "green here" means "safe to merge and safe to ship".
+name: CI - Lint, Test & Build
 
 on:
   push:
     branches: [main, develop, 'creation/**']
+  # Deliberately no branch filter. A workflow skipped by branch or path filtering
+  # leaves its checks "pending" on the pull request forever, which blocks merges
+  # even when the commit is fine (GitHub's documented footgun for required checks).
   pull_request:
-    branches: [main, develop]
+  workflow_dispatch:
+  # Lets the Pages workflow reuse these exact checks instead of duplicating them.
+  workflow_call:
 
 permissions:
   contents: read
 
 jobs:
-  validate:
-    name: Lint & Build Validation
+  test:
+    name: Lint, typecheck & test
     runs-on: ubuntu-latest
 
     steps:
@@ -21,7 +29,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
@@ -30,5 +38,54 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
+      - name: Typecheck
+        run: npm run typecheck
+
+      # Runs the suite with the coverage thresholds from vitest.config.ts, so a
+      # regression in src/data or src/lib fails the build just like a red test.
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+  build:
+    name: Build production bundle
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Build TypeScript & Vite bundle
         run: npm run build
+
+  # A job that is skipped by a conditional reports "success", and a job that is
+  # skipped because its dependency failed may not block a merge at all. This gate
+  # therefore always runs and inspects the real result of every required job, so
+  # the one check name branch protection needs — "PR merge gate" — cannot pass
+  # while a test, lint, typecheck or build job has failed.
+  gate:
+    name: PR merge gate
+    if: always()
+    needs: [test, build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Fail unless every required job succeeded
+        run: |
+          echo "lint / typecheck / test -> ${{ needs.test.result }}"
+          echo "build                   -> ${{ needs.build.result }}"
+
+          if [ "${{ needs.test.result }}" != "success" ] || [ "${{ needs.build.result }}" != "success" ]; then
+            echo "::error::Required checks did not pass. This pull request cannot be merged."
+            exit 1
+          fi
+
+          echo "All required checks passed."

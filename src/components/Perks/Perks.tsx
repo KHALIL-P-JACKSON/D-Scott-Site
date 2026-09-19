@@ -7,7 +7,7 @@ export function Perks() {
     {
       icon: <Leaf size={24} />,
       title: 'Non-Toxic & Clean',
-      desc: 'We use gentle, ammonia-free hair dyes, 10-free gel polishes, and vegan care treatments for healthy hair & nails.',
+      desc: 'We use gentle, HEMA-free acrylics, 10-free gel polishes, and vegan nail care products for healthy nails.',
       color: 'green' as const,
     },
     {
@@ -25,7 +25,7 @@ export function Perks() {
     {
       icon: <Heart size={24} />,
       title: 'Custom Consultations',
-      desc: 'Never rushed. We review your hair texture, goals, and nail inspo pictures to craft a style that truly fits you.',
+      desc: 'Never rushed. We review your nail length, shape, and design inspo pictures to craft a set that truly fits you.',
       color: 'purple' as const,
     },
   ]

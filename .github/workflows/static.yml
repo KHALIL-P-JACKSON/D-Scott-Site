@@ -1,5 +1,9 @@
-# Simple workflow for deploying static content to GitHub Pages
-name: Deploy static content to Pages
+# Deploys `main` to GitHub Pages, but only after the CI checks pass.
+#
+# Pull requests are verified by `ci.yml` (its "PR merge gate" check is the one to
+# require in branch protection), so this workflow does not re-run them — it calls
+# `ci.yml` itself to keep the deploy gate identical to the merge gate.
+name: Verify and deploy to Pages
 
 on:
   # Runs on pushes targeting the default branch
@@ -22,8 +26,15 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Single deploy job since we're just deploying
+  # Calls the same workflow pull requests run, so `main` can never be published
+  # while lint, typecheck, tests or the build are red.
+  verify:
+    name: Lint, typecheck and test
+    uses: ./.github/workflows/ci.yml
+
+  # Publishing is gated on the checks above passing.
   deploy:
+    needs: verify
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -35,7 +46,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
