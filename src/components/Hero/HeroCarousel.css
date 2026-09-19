@@ -1,0 +1,213 @@
+.hero-carousel {
+  position: relative;
+  isolation: isolate;
+  height: 300px;
+  margin: 0 0 16px;
+  border-radius: var(--radius-4);
+  border: 1px solid var(--gray-a4);
+  background: var(--gray-3);
+  overflow: hidden;
+}
+
+.hero-carousel-stage {
+  position: absolute;
+  inset: 0;
+}
+
+.hero-carousel-slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0;
+  transform: scale(1.04);
+  transition: opacity 900ms ease, transform 6000ms ease;
+  will-change: opacity, transform;
+}
+
+.hero-carousel-slide.is-active {
+  z-index: 1;
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Legibility scrim for the caption + controls. */
+.hero-carousel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom, rgba(24, 10, 15, 0.4) 0%, rgba(24, 10, 15, 0) 38%),
+    linear-gradient(to top, rgba(24, 10, 15, 0.6) 0%, rgba(24, 10, 15, 0) 46%);
+}
+
+.hero-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(24, 10, 15, 0.38);
+  color: var(--white);
+  cursor: pointer;
+  opacity: 0.85;
+  transform: translateY(-50%);
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.hero-carousel-arrow:hover {
+  background: var(--ruby-9);
+  opacity: 1;
+}
+
+.hero-carousel-arrow:focus-visible,
+.hero-carousel-dot:focus-visible {
+  outline: 2px solid var(--white);
+  outline-offset: 2px;
+}
+
+.hero-carousel-prev {
+  left: 10px;
+}
+
+.hero-carousel-next {
+  right: 10px;
+}
+
+.hero-carousel-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(24, 10, 15, 0.38);
+  backdrop-filter: blur(6px);
+}
+
+.hero-carousel-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hero-carousel-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: width 0.25s ease, background 0.25s ease;
+}
+
+.hero-carousel-dot.is-active {
+  width: 20px;
+  background: var(--white);
+}
+
+.hero-carousel-counter {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.hero-carousel-caption {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  z-index: 3;
+  margin: 0;
+  color: var(--white);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+.hero-carousel-progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 4;
+  display: block;
+  width: 100%;
+  height: 3px;
+  background: var(--ruby-9);
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation-name: hero-carousel-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes hero-carousel-progress {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (max-width: 1024px) {
+  .hero-carousel {
+    height: 340px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-carousel {
+    height: 280px;
+  }
+
+  .hero-carousel-caption {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 430px) {
+  .hero-carousel {
+    height: 240px;
+    margin-bottom: 12px;
+  }
+
+  .hero-carousel-arrow {
+    width: 30px;
+    height: 30px;
+  }
+
+  .hero-carousel-counter {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-carousel-slide {
+    transform: none;
+    transition: opacity 200ms ease;
+  }
+
+  .hero-carousel-progress {
+    display: none;
+  }
+}

@@ -1,4 +1,5 @@
 import { Sparkles, Star, Brush, Gem, Heart, Clock, ArrowRight, ShieldCheck } from 'lucide-react'
+import { HeroCarousel } from './HeroCarousel'
 import './Hero.css'
 
 export function Hero() {
@@ -61,6 +62,8 @@ export function Hero() {
 
           <div className="hero-visual">
             <div className="radix-hero-card">
+              <HeroCarousel />
+
               <div className="hero-top-meta">
                 <span className="hero-tag">Today at D'Luxe Beauty</span>
                 <div className="hero-hours-row">

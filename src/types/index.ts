@@ -45,6 +45,12 @@ export interface ReviewItem {
   text: string
 }
 
+export interface HeroSlide {
+  src: string
+  alt: string
+  caption: string
+}
+
 export interface BookingFormData {
   name: string
   phone: string
