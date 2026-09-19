@@ -5,6 +5,7 @@ import type { HeroSlide } from '../../types'
 import './HeroCarousel.css'
 
 const AUTOPLAY_MS = 4500
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)'
 
 type HeroCarouselProps = {
   slides?: HeroSlide[]
@@ -18,10 +19,10 @@ export function HeroCarousel({
   const [activeIndex, setActiveIndex] = useState(0)
   const [isInteracting, setIsInteracting] = useState(false)
   const [isTabHidden, setIsTabHidden] = useState(false)
-  const [prefersReducedMotion] = useState(
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(
     () =>
       typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+      window.matchMedia(REDUCED_MOTION_QUERY).matches,
   )
 
   const slideCount = slides.length
@@ -54,6 +55,20 @@ export function HeroCarousel({
     handleVisibilityChange()
     document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return undefined
+    }
+
+    const mediaQuery = window.matchMedia(REDUCED_MOTION_QUERY)
+    // The lazy initializer above reads the query value at mount; this listener
+    // keeps the state in sync when the preference changes at runtime.
+    const handleChange = (event: MediaQueryListEvent) => setPrefersReducedMotion(event.matches)
+
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
   }, [])
 
   if (slideCount === 0) {
