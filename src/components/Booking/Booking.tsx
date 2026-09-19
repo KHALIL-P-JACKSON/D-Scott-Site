@@ -31,7 +31,6 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
     name: '',
     phone: '',
     email: '',
-    service: selectedService,
     date: '',
     time: 'morning',
     notes: '',
@@ -58,7 +57,6 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
       name: '',
       phone: '',
       email: '',
-      service: '',
       date: '',
       time: 'morning',
       notes: '',
@@ -150,7 +148,10 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
                   <Callout.Icon>
                     <CheckCircle2 size={24} />
                   </Callout.Icon>
-                  <Callout.Text>
+                  {/* A plain wrapper: the default `<p>` of `Callout.Text` cannot
+                      legally contain the heading and paragraphs below, which
+                      would break hydration. */}
+                  <div className="booking-success-body">
                     <Heading as="h4" size="4" mb="1">Appointment Request Received!</Heading>
                     <Text size="3" as="p" mb="2">
                       Thank you, <strong>{formData.name}</strong>! We have received your request for{' '}
@@ -162,7 +163,7 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
                     <Button variant="solid" color="green" radius="full" onClick={handleReset}>
                       Submit Another Request
                     </Button>
-                  </Callout.Text>
+                  </div>
                 </Callout.Root>
               ) : (
                 <form onSubmit={handleSubmit}>
@@ -209,13 +210,9 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
                       <Text as="label" id="booking-service-label" size="2" weight="bold">Select Service *</Text>
                       <Select.Root
                         size="3"
-                        value={selectedService || undefined}
+                        value={selectedService}
                         onValueChange={(val) => {
-                          const nextService = val === 'none' ? '' : val
-                          if (onServiceChange) {
-                            onServiceChange(nextService)
-                          }
-                          setFormData((prev) => ({ ...prev, service: nextService }))
+                          onServiceChange?.(val)
                           setServiceError('')
                         }}
                       >

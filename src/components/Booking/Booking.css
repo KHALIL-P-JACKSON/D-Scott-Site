@@ -56,6 +56,11 @@
   padding: 24px;
 }
 
+/* Mirrors `Callout.Text`, which cannot legally wrap a heading and paragraphs. */
+.booking-success-body {
+  flex-grow: 1;
+}
+
 @media (max-width: 768px) {
   .booking-side-info {
     padding: 32px 20px;
