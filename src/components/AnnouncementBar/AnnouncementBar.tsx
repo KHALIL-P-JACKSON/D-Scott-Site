@@ -11,7 +11,7 @@ export function AnnouncementBar() {
             <Sparkles size={12} /> NEW CLIENT OFFER
           </Badge>
           <Text size="2" weight="medium" className="announcement-text">
-            Get 15% off your first hair or nail appointment with code <strong>GLOW15</strong>
+            Get 15% off your first nail appointment with code <strong>GLOW15</strong>
           </Text>
           <Text size="1" className="announcement-sub">
             • Walk-ins Welcome & By Appointment
