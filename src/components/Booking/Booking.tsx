@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import {
   Container,
   Grid,
@@ -13,9 +13,21 @@ import {
   TextArea,
   Callout,
 } from '@radix-ui/themes'
-import { MapPin, Clock, Phone, CheckCircle2, Calendar, Sparkles } from 'lucide-react'
+import {
+  MapPin,
+  Clock,
+  Phone,
+  CheckCircle2,
+  Calendar,
+  Sparkles,
+  IdCard,
+  ShieldCheck,
+  AlertCircle,
+} from 'lucide-react'
 import { SERVICE_OPTION_GROUPS } from '../../data/services'
-import type { BookingFormData } from '../../types'
+import { loadAccount } from '../../lib/account'
+import { bookingGate, createBookingRequest } from '../../lib/bookings'
+import type { AccountSnapshot, BookingFormData, BookingTimeSlot } from '../../types'
 import './Booking.css'
 
 interface BookingProps {
@@ -27,6 +39,10 @@ interface BookingProps {
 export function Booking({ selectedService, onServiceChange, onClearSelectedService }: BookingProps) {
   const [submitted, setSubmitted] = useState(false)
   const [serviceError, setServiceError] = useState('')
+  const [requestError, setRequestError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [account, setAccount] = useState<AccountSnapshot | null>(null)
+  const [loadingAccount, setLoadingAccount] = useState(true)
   const [formData, setFormData] = useState<BookingFormData>({
     name: '',
     phone: '',
@@ -37,8 +53,37 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
   })
 
   const currentService = selectedService
+  const gate = bookingGate(account, loadingAccount)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    let active = true
+
+    loadAccount().then((snapshot) => {
+      if (!active) {
+        return
+      }
+
+      setAccount(snapshot ?? null)
+      setLoadingAccount(false)
+
+      // A signed-in client should not have to retype what the studio already
+      // holds; fill only the fields they have not touched yet.
+      if (snapshot) {
+        setFormData((current) => ({
+          ...current,
+          name: current.name || snapshot.profile?.full_name || '',
+          phone: current.phone || snapshot.profile?.phone || '',
+          email: current.email || snapshot.email || '',
+        }))
+      }
+    })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!selectedService.trim()) {
@@ -47,12 +92,36 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
     }
 
     setServiceError('')
+    setRequestError('')
+
+    if (!account) {
+      setRequestError('Please sign in before requesting an appointment.')
+      return
+    }
+
+    setSubmitting(true)
+
+    const { error } = await createBookingRequest(account, {
+      serviceOption: selectedService,
+      preferredDate: formData.date,
+      timeSlot: formData.time as BookingTimeSlot,
+      notes: formData.notes,
+    })
+
+    setSubmitting(false)
+
+    if (error) {
+      setRequestError(error)
+      return
+    }
+
     setSubmitted(true)
   }
 
   const handleReset = () => {
     setSubmitted(false)
     setServiceError('')
+    setRequestError('')
     setFormData({
       name: '',
       phone: '',
@@ -143,7 +212,44 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
               p={{ initial: '5', md: '7' }}
               className="booking-form-wrapper"
             >
-              {submitted ? (
+              {gate === 'loading' ? (
+                <Flex direction="column" align="center" py="6">
+                  <Text size="2" color="gray">
+                    Checking your account…
+                  </Text>
+                </Flex>
+              ) : gate === 'signed-out' ? (
+                <Callout.Root color="ruby" size="3" variant="surface" className="booking-gate-callout">
+                  <Callout.Icon>
+                    <IdCard size={24} />
+                  </Callout.Icon>
+                  <Callout.Text>
+                    <strong>Sign in to request an appointment.</strong> An account keeps your details
+                    and your ID on file, so your next booking takes a minute.{' '}
+                    <a href="#/account" className="booking-gate-link">
+                      Create an account or sign in
+                    </a>
+                  </Callout.Text>
+                </Callout.Root>
+              ) : gate === 'needs-id' ? (
+                <Callout.Root
+                  color="amber"
+                  size="3"
+                  variant="surface"
+                  className="booking-gate-callout"
+                >
+                  <Callout.Icon>
+                    <ShieldCheck size={24} />
+                  </Callout.Icon>
+                  <Callout.Text>
+                    <strong>One step left.</strong> Upload a government-issued photo ID to your
+                    account before your first appointment.{' '}
+                    <a href="#/account" className="booking-gate-link">
+                      Upload your ID
+                    </a>
+                  </Callout.Text>
+                </Callout.Root>
+              ) : submitted ? (
                 <Callout.Root color="green" size="3" variant="surface" className="booking-success-callout">
                   <Callout.Icon>
                     <CheckCircle2 size={24} />
@@ -279,6 +385,15 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
                       />
                     </Flex>
 
+                    {requestError ? (
+                      <Callout.Root color="red" size="2" variant="surface" role="alert">
+                        <Callout.Icon>
+                          <AlertCircle size={18} />
+                        </Callout.Icon>
+                        <Callout.Text>{requestError}</Callout.Text>
+                      </Callout.Root>
+                    ) : null}
+
                     <Button
                       type="submit"
                       size="3"
@@ -287,6 +402,7 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
                       radius="full"
                       highContrast
                       mt="2"
+                      loading={submitting}
                     >
                       <Calendar size={16} /> Request Appointment
                     </Button>

@@ -1,6 +1,45 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen } from './test/render'
+import type { AccountSnapshot } from './types'
+import { loadAccount } from './lib/account'
 import App from './App'
+
+/**
+ * `App` mounts the booking form, which waits on the account check. Sign these
+ * page specs in as a verified client so they exercise the form, not the gate —
+ * the gate itself is covered in `Booking.spec.tsx`.
+ */
+vi.mock('./lib/account', async () => {
+  const actual = await vi.importActual<typeof import('./lib/account')>('./lib/account')
+
+  return { ...actual, loadAccount: vi.fn() }
+})
+
+vi.mock('./lib/bookings', async () => {
+  const actual = await vi.importActual<typeof import('./lib/bookings')>('./lib/bookings')
+
+  return { ...actual, createBookingRequest: vi.fn() }
+})
+
+const verifiedAccount: AccountSnapshot = {
+  userId: 'u-1',
+  email: 'ashley@example.com',
+  profile: {
+    id: 'u-1',
+    full_name: 'Ashley Davis',
+    phone: '(555) 111-2222',
+    is_admin: false,
+    id_status: 'approved',
+    id_path: 'u-1/id.png',
+    id_uploaded_at: null,
+    id_review_notes: null,
+  },
+}
+
+beforeEach(() => {
+  vi.mocked(loadAccount).mockReset()
+  vi.mocked(loadAccount).mockResolvedValue(verifiedAccount)
+})
 
 describe('the page as a whole', () => {
   it('renders every section a visitor is promised', () => {
@@ -15,10 +54,11 @@ describe('the page as a whole', () => {
     expect(screen.getByText(/GLOW15/)).toBeInTheDocument()
   })
 
-  it('carries a chosen service straight into the booking form', () => {
+  it('carries a chosen service straight into the booking form', async () => {
     const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView')
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     render(<App />)
+    await screen.findByLabelText(/full name/i)
 
     fireEvent.click(screen.getByRole('button', { name: /book from \$25/i }))
 
@@ -37,10 +77,15 @@ describe('the page as a whole', () => {
     expect(warnings).toEqual([])
   })
 
-  it('points every in-page link at a section that exists', () => {
+  it('points every in-page link at a section that exists', async () => {
     const { container } = render(<App />)
+    await screen.findByLabelText(/full name/i)
 
-    const links = Array.from(container.querySelectorAll('a[href^="#"]'))
+    // `#/account` is the account route, not an in-page anchor, so it is checked
+    // separately from the `#services`-style links.
+    const links = Array.from(container.querySelectorAll('a[href^="#"]')).filter(
+      (link) => !(link.getAttribute('href') ?? '').startsWith('#/'),
+    )
     expect(links.length).toBeGreaterThan(0)
 
     const hrefs = links.map((link) => link.getAttribute('href') ?? '')
