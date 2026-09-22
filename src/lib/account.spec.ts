@@ -9,6 +9,7 @@ import {
   idFileError,
   idObjectPath,
   loadAccount,
+  loadSiteHours,
   passwordError,
   signInWithEmail,
   signOut,
@@ -226,6 +227,42 @@ describe('signInWithEmail', () => {
       error: 'That email and password do not match an account.',
       account: null,
     })
+  })
+})
+
+describe('loadSiteHours', () => {
+  beforeEach(() => {
+    for (const mock of Object.values(mocks)) {
+      mock.mockReset()
+    }
+  })
+
+  it('prefers the live hours row from Supabase when it is available', async () => {
+    mocks.from.mockReturnValue({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: async () => ({
+            data: {
+              hours: {
+                mon: { closed: true, open: '09:00', close: '17:00' },
+                tue: { closed: true, open: '09:00', close: '17:00' },
+                wed: { closed: true, open: '09:00', close: '17:00' },
+                thu: { closed: false, open: '17:00', close: '20:00' },
+                fri: { closed: false, open: '08:00', close: '17:00' },
+                sat: { closed: false, open: '08:00', close: '18:00' },
+                sun: { closed: false, open: '08:00', close: '18:00' },
+              },
+            },
+            error: null,
+          }),
+        }),
+      }),
+    })
+
+    expect(await loadSiteHours()).toMatchObject({
+      thu: { open: '17:00', close: '20:00' },
+    })
+    expect(mocks.from).toHaveBeenCalledWith('site_hours')
   })
 })
 

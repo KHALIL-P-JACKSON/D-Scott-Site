@@ -1,4 +1,5 @@
 import type {
+  PricingCatalog,
   ServiceCategoryMeta,
   ServiceItem,
   ServiceOptionGroup,
@@ -156,3 +157,8 @@ export const SERVICE_OPTION_GROUPS: ServiceOptionGroup[] = SERVICE_CATEGORIES.ma
     })
   }),
 }))
+
+export const DEFAULT_PRICING_CATALOG: PricingCatalog = {
+  categories: SERVICE_CATEGORIES,
+  services: SERVICES,
+}

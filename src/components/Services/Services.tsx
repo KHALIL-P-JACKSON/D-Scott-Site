@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Container, Flex, Heading, Text, Badge, Card, Button, Tabs, Grid, Box } from '@radix-ui/themes'
 import { Clock, ArrowRight } from 'lucide-react'
 import { SERVICES, SERVICE_CATEGORIES, getDefaultServiceOption } from '../../data/services'
+import { loadPricingCatalog } from '../../lib/account'
 import { getCtaLabel } from '../../lib/services'
 import './Services.css'
 
@@ -11,11 +12,37 @@ interface ServicesProps {
 
 export function Services({ onSelectService }: ServicesProps) {
   const [activeTab, setActiveTab] = useState<string>('all')
+  const [services, setServices] = useState(SERVICES)
+
+  useEffect(() => {
+    let active = true
+
+    const apply = async () => {
+      const next = await loadPricingCatalog()
+
+      if (active) {
+        setServices(next.services)
+      }
+    }
+
+    void apply()
+
+    const handleUpdate = () => {
+      void apply()
+    }
+
+    window.addEventListener('dscott-pricing-updated', handleUpdate)
+
+    return () => {
+      active = false
+      window.removeEventListener('dscott-pricing-updated', handleUpdate)
+    }
+  }, [])
 
   const filteredServices =
     activeTab === 'all'
-      ? SERVICES
-      : SERVICES.filter((s) => s.category === activeTab)
+      ? services
+      : services.filter((s) => s.category === activeTab)
 
   return (
     <section id="services" className="radix-services-section">

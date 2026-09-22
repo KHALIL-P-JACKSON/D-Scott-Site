@@ -25,7 +25,7 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { SERVICE_OPTION_GROUPS } from '../../data/services'
-import { loadAccount } from '../../lib/account'
+import { loadAccount, readSiteHours, siteHoursRows } from '../../lib/account'
 import { bookingGate, createBookingRequest } from '../../lib/bookings'
 import type { AccountSnapshot, BookingFormData, BookingTimeSlot } from '../../types'
 import './Booking.css'
@@ -45,6 +45,7 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
   const [loadingAccount, setLoadingAccount] = useState(true)
   const [accountError, setAccountError] = useState('')
   const [accountRevision, setAccountRevision] = useState(0)
+  const siteHours = readSiteHours()
   const [formData, setFormData] = useState<BookingFormData>({
     name: '',
     phone: '',
@@ -190,11 +191,11 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
                     </Flex>
                     <Flex direction="column">
                       <Text size="2" weight="bold" className="side-info-label">Studio Hours</Text>
-                      <Text size="2" className="side-info-val">Mon - Wed: Closed</Text>
-                      <Text size="2" className="side-info-val">Thursday: 5:00 PM – 8:00 PM</Text>
-                      <Text size="2" className="side-info-val">Friday: 8:00 AM – 5:00 PM</Text>
-                      <Text size="2" className="side-info-val">Saturday: 8:00 AM – 6:00 PM</Text>
-                      <Text size="2" className="side-info-val">Sunday: 8:00 AM – 6:00 PM</Text>
+                      {siteHoursRows(siteHours).map(({ label, value }) => (
+                        <Text key={label} size="2" className="side-info-val">
+                          {label}: {value}
+                        </Text>
+                      ))}
                     </Flex>
                   </Flex>
 

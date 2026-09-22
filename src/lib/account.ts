@@ -1,10 +1,15 @@
+import { DEFAULT_PRICING_CATALOG } from '../data/services'
 import { supabase } from './supabase'
 import type {
   AccountSnapshot,
+  DayOfWeek,
   IdStatus,
+  PricingCatalog,
   Profile,
   SignInFields,
   SignUpFields,
+  SiteDayHours,
+  SiteHours,
 } from '../types'
 
 /** Kept in step with the bucket created in `supabase/schema.sql`. */
@@ -12,6 +17,22 @@ export const ID_BUCKET = 'id-documents'
 export const MAX_ID_BYTES = 5 * 1024 * 1024
 export const ID_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
 export const PASSWORD_MIN_LENGTH = 8
+
+export const DEFAULT_SITE_HOURS: SiteHours = {
+  mon: { closed: true, open: '09:00', close: '17:00' },
+  tue: { closed: true, open: '09:00', close: '17:00' },
+  wed: { closed: true, open: '09:00', close: '17:00' },
+  thu: { closed: false, open: '17:00', close: '20:00' },
+  fri: { closed: false, open: '08:00', close: '17:00' },
+  sat: { closed: false, open: '08:00', close: '18:00' },
+  sun: { closed: false, open: '08:00', close: '18:00' },
+}
+
+const SITE_HOURS_KEY = 'dscott-site-hours'
+const SITE_HOURS_UPDATED_EVENT = 'dscott-site-hours-updated'
+const PRICING_KEY = 'dscott-pricing-catalog'
+const PRICING_UPDATED_EVENT = 'dscott-pricing-updated'
+const SITE_HOURS_ORDER: DayOfWeek[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 
 /** Just the parts of a `File` the account page needs, so specs can pass plain objects. */
 export type FileLike = Pick<File, 'name' | 'type' | 'size'>
@@ -138,6 +159,348 @@ export async function updateProfileDetails(
     .eq('id', userId)
 
   return { error: error ? describeAuthError(error.message) : null }
+}
+
+export function readSiteHours(): SiteHours {
+  const fallback = DEFAULT_SITE_HOURS
+
+  if (typeof window === 'undefined') {
+    return fallback
+  }
+
+  try {
+    const raw = window.localStorage.getItem(SITE_HOURS_KEY)
+
+    if (!raw) {
+      return fallback
+    }
+
+    const parsed = JSON.parse(raw) as Partial<SiteHours>
+    return normalizeSiteHours(parsed)
+  } catch {
+    return fallback
+  }
+}
+
+function normalizePricingCatalog(catalog: Partial<PricingCatalog> | null | undefined): PricingCatalog {
+  const fallback = DEFAULT_PRICING_CATALOG
+
+  if (!catalog || typeof catalog !== 'object') {
+    return fallback
+  }
+
+  const categories = Array.isArray(catalog.categories) && catalog.categories.length > 0
+    ? (catalog.categories as PricingCatalog['categories'])
+    : fallback.categories
+
+  const services = Array.isArray(catalog.services) && catalog.services.length > 0
+    ? (catalog.services as PricingCatalog['services'])
+    : fallback.services
+
+  return { categories, services }
+}
+
+export function readPricingCatalog(): PricingCatalog {
+  const fallback = DEFAULT_PRICING_CATALOG
+
+  if (typeof window === 'undefined') {
+    return fallback
+  }
+
+  try {
+    const raw = window.localStorage.getItem(PRICING_KEY)
+
+    if (!raw) {
+      return fallback
+    }
+
+    const parsed = JSON.parse(raw) as Partial<PricingCatalog>
+    return normalizePricingCatalog(parsed)
+  } catch {
+    return fallback
+  }
+}
+
+export async function loadPricingCatalog(): Promise<PricingCatalog> {
+  const fallback = readPricingCatalog()
+
+  try {
+    const { data, error } = await supabase
+      .from('pricing')
+      .select('catalog')
+      .eq('id', 'service-menu')
+      .maybeSingle()
+
+    if (!error && data?.catalog) {
+      const next = normalizePricingCatalog(data.catalog as Partial<PricingCatalog>)
+
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(PRICING_KEY, JSON.stringify(next))
+      }
+
+      return next
+    }
+
+    if (error && error.code !== '42P01' && error.code !== 'PGRST116') {
+      return fallback
+    }
+  } catch {
+    // Keep the current catalog when the table is missing or the database is not ready.
+  }
+
+  return fallback
+}
+
+export function notifyPricingUpdated(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(PRICING_UPDATED_EVENT))
+  }
+}
+
+export async function updatePricingCatalog(catalog: PricingCatalog): Promise<ActionResult> {
+  const normalized = normalizePricingCatalog(catalog)
+
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem(PRICING_KEY, JSON.stringify(normalized))
+    notifyPricingUpdated()
+  }
+
+  try {
+    const { error } = await supabase
+      .from('pricing')
+      .upsert({ id: 'service-menu', catalog: normalized }, { onConflict: 'id' })
+
+    if (error && error.code !== '42P01') {
+      return { error: error.message }
+    }
+  } catch {
+    // The data remains in localStorage so the site continues to render while the
+    // remote table is being created or the admin is working offline.
+  }
+
+  return { error: null }
+}
+
+export async function loadSiteHours(): Promise<SiteHours> {
+  const fallback = readSiteHours()
+
+  try {
+    const { data, error } = await supabase
+      .from('site_hours')
+      .select('hours')
+      .eq('id', 'studio-hours')
+      .maybeSingle()
+
+    if (!error && data?.hours) {
+      const next = normalizeSiteHours(data.hours as Partial<SiteHours>)
+
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(SITE_HOURS_KEY, JSON.stringify(next))
+      }
+
+      return next
+    }
+
+    if (error && error.code !== '42P01' && error.code !== 'PGRST116') {
+      return fallback
+    }
+  } catch {
+    // If the table is missing or the client is offline, keep using the browser
+    // value and the built-in default schedule until the database is ready.
+  }
+
+  return fallback
+}
+
+export function notifySiteHoursUpdated(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(SITE_HOURS_UPDATED_EVENT))
+  }
+}
+
+export async function updateSiteHours(hours: SiteHours): Promise<ActionResult> {
+  const normalized = normalizeSiteHours(hours)
+
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem(SITE_HOURS_KEY, JSON.stringify(normalized))
+    notifySiteHoursUpdated()
+  }
+
+  try {
+    const { error } = await supabase
+      .from('site_hours')
+      .upsert({ id: 'studio-hours', hours: normalized }, { onConflict: 'id' })
+
+    if (error && error.code !== '42P01') {
+      return { error: error.message }
+    }
+  } catch {
+    // The editor may not have a matching table yet. The browser-local storage
+    // backup still keeps the hours live for the current site session.
+  }
+
+  return { error: null }
+}
+
+export function formatDayHours(day: SiteDayHours): string {
+  if (day.closed) {
+    return 'Closed'
+  }
+
+  return `${formatTime(day.open)} – ${formatTime(day.close)}`
+}
+
+export function siteHoursRows(hours: SiteHours): Array<{ day: string; label: string; value: string }> {
+  const rows: Array<{ day: string; label: string; value: string }> = []
+  let index = 0
+
+  while (index < SITE_HOURS_ORDER.length) {
+    const firstDay = SITE_HOURS_ORDER[index]
+    const firstHours = hours[firstDay]
+    let lastDay = firstDay
+    let cursor = index + 1
+
+    while (cursor < SITE_HOURS_ORDER.length) {
+      const nextDay = SITE_HOURS_ORDER[cursor]
+      const nextHours = hours[nextDay]
+
+      if (!sameScheduleBlock(firstHours, nextHours)) {
+        break
+      }
+
+      if (isConsecutiveDay(lastDay, nextDay)) {
+        lastDay = nextDay
+        cursor += 1
+        continue
+      }
+
+      break
+    }
+
+    const label = formatRowLabel(firstDay, lastDay)
+
+    rows.push({
+      day: `${firstDay}-${lastDay}`,
+      label,
+      value: firstHours.closed ? 'Closed' : `${formatTime(firstHours.open)} – ${formatTime(firstHours.close)}`,
+    })
+
+    index = cursor
+  }
+
+  return rows
+}
+
+export function siteHoursSummary(hours: SiteHours): string {
+  const rows = siteHoursRows(hours)
+  const openRows = rows.filter((row) => row.value !== 'Closed')
+
+  if (openRows.length === 0) {
+    return 'Closed every day'
+  }
+
+  const first = openRows[0].label
+  const last = openRows[openRows.length - 1].label
+  const closedRows = rows.filter((row) => row.value === 'Closed')
+  const closedLabel = closedRows.length > 0 ? ` · Closed ${closedRows[0].label}` : ''
+
+  return `${first}–${last}${closedLabel}`
+}
+
+function normalizeSiteHours(hours: Partial<SiteHours> | null | undefined): SiteHours {
+  return {
+    mon: normalizeDayHours(hours?.mon ?? DEFAULT_SITE_HOURS.mon),
+    tue: normalizeDayHours(hours?.tue ?? DEFAULT_SITE_HOURS.tue),
+    wed: normalizeDayHours(hours?.wed ?? DEFAULT_SITE_HOURS.wed),
+    thu: normalizeDayHours(hours?.thu ?? DEFAULT_SITE_HOURS.thu),
+    fri: normalizeDayHours(hours?.fri ?? DEFAULT_SITE_HOURS.fri),
+    sat: normalizeDayHours(hours?.sat ?? DEFAULT_SITE_HOURS.sat),
+    sun: normalizeDayHours(hours?.sun ?? DEFAULT_SITE_HOURS.sun),
+  }
+}
+
+function normalizeDayHours(day: Partial<SiteDayHours> | undefined): SiteDayHours {
+  const fallback = DEFAULT_SITE_HOURS.mon
+  return {
+    closed: Boolean(day?.closed ?? fallback.closed),
+    open: typeof day?.open === 'string' ? day.open : fallback.open,
+    close: typeof day?.close === 'string' ? day.close : fallback.close,
+  }
+}
+
+function sameScheduleBlock(left: SiteDayHours, right: SiteDayHours): boolean {
+  if (left.closed !== right.closed) {
+    return false
+  }
+
+  if (left.closed) {
+    return true
+  }
+
+  return left.open === right.open && left.close === right.close
+}
+
+function formatRowLabel(firstDay: DayOfWeek, lastDay: DayOfWeek): string {
+  if (firstDay === lastDay) {
+    return longDayName(firstDay)
+  }
+
+  return `${dayName(firstDay)} - ${dayName(lastDay)}`
+}
+
+function dayName(day: DayOfWeek): string {
+  switch (day) {
+    case 'mon':
+      return 'Mon'
+    case 'tue':
+      return 'Tue'
+    case 'wed':
+      return 'Wed'
+    case 'thu':
+      return 'Thu'
+    case 'fri':
+      return 'Fri'
+    case 'sat':
+      return 'Sat'
+    default:
+      return 'Sun'
+  }
+}
+
+function longDayName(day: DayOfWeek): string {
+  switch (day) {
+    case 'mon':
+      return 'Monday'
+    case 'tue':
+      return 'Tuesday'
+    case 'wed':
+      return 'Wednesday'
+    case 'thu':
+      return 'Thursday'
+    case 'fri':
+      return 'Friday'
+    case 'sat':
+      return 'Saturday'
+    default:
+      return 'Sunday'
+  }
+}
+
+function isConsecutiveDay(previous: DayOfWeek, current: DayOfWeek): boolean {
+  const order = SITE_HOURS_ORDER
+  return order.indexOf(current) === order.indexOf(previous) + 1
+}
+
+function formatTime(value: string): string {
+  const [hours, minutes] = value.split(':').map(Number)
+  const date = new Date()
+  date.setHours(hours, minutes, 0, 0)
+
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(date)
 }
 
 export async function uploadIdDocument(userId: string, file: FileLike): Promise<ActionResult> {

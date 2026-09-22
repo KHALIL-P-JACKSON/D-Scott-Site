@@ -10,21 +10,32 @@ import {
   Text,
   TextField,
 } from '@radix-ui/themes'
-import { IdCard, LogOut } from 'lucide-react'
+import { IdCard, LogOut, Plus, Trash2 } from 'lucide-react'
+import { SERVICE_CATEGORIES } from '../../data/services'
 import {
   describeIdStatus,
   idFileError,
   loadAccount,
+  readPricingCatalog,
+  readSiteHours,
   signInWithEmail,
   signOut,
   signUpWithEmail,
+  updatePricingCatalog,
   updateProfileDetails,
+  updateSiteHours,
   uploadIdDocument,
   validateSignIn,
   validateSignUp,
 } from '../../lib/account'
 import { canBook } from '../../lib/bookings'
-import type { AccountSnapshot, SignInFields, SignUpFields } from '../../types'
+import type {
+  AccountSnapshot,
+  ServiceItem,
+  ServiceVariant,
+  SignInFields,
+  SignUpFields,
+} from '../../types'
 import './Account.css'
 
 type AccountView =
@@ -182,6 +193,8 @@ function SignedInPanels({
         </Flex>
       </Card>
 
+      {account.profile?.is_admin ? <AdminHoursPanel /> : null}
+      {account.profile?.is_admin ? <AdminPricingPanel /> : null}
       <IdPanel account={account} onChanged={onChanged} />
       <DetailsPanel account={account} onChanged={onChanged} />
     </Flex>
@@ -532,6 +545,417 @@ function IdPanel({ account, onChanged }: { account: AccountSnapshot; onChanged: 
         >
           {account.profile?.id_path ? 'Replace ID' : 'Upload ID'}
         </Button>
+      </Flex>
+    </Card>
+  )
+}
+
+function AdminHoursPanel() {
+  const [hours, setHours] = useState(readSiteHours())
+  const [message, setMessage] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  function updateDay(day: keyof typeof hours, field: 'open' | 'close' | 'closed', value: string | boolean) {
+    setHours((current) => ({
+      ...current,
+      [day]: {
+        ...current[day],
+        [field]: value,
+      },
+    }))
+  }
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault()
+    setBusy(true)
+    setMessage('')
+
+    const result = await updateSiteHours(hours)
+
+    setBusy(false)
+    setMessage(result.error ? result.error : 'Saved the studio hours.')
+  }
+
+  const days = [
+    ['mon', 'Monday'],
+    ['tue', 'Tuesday'],
+    ['wed', 'Wednesday'],
+    ['thu', 'Thursday'],
+    ['fri', 'Friday'],
+    ['sat', 'Saturday'],
+    ['sun', 'Sunday'],
+  ] as const
+
+  return (
+    <Card size="4" variant="classic" className="account-card">
+      <Flex direction="column" gap="4">
+        <Flex direction="column" gap="1">
+          <Heading as="h2" size="5">
+            Studio Hours
+          </Heading>
+          <Text size="2" color="gray">
+            Update the public hours shown across the site.
+          </Text>
+        </Flex>
+
+        <form onSubmit={handleSubmit}>
+          <Flex direction="column" gap="3">
+            {days.map(([day, label]) => (
+              <Flex key={day} align="center" justify="between" gap="3" wrap="wrap">
+                <Text size="2" weight="bold" style={{ minWidth: '6rem' }}>
+                  {label}
+                </Text>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={hours[day].closed}
+                    onChange={(event) => updateDay(day, 'closed', event.target.checked)}
+                  />
+                  <Text size="2">Closed</Text>
+                </label>
+
+                {!hours[day].closed ? (
+                  <>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Text as="span" size="2">Open</Text>
+                      <TextField.Root
+                        size="2"
+                        type="time"
+                        aria-label={`${label} open`}
+                        value={hours[day].open}
+                        onChange={(event) => updateDay(day, 'open', event.target.value)}
+                      />
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Text as="span" size="2">Close</Text>
+                      <TextField.Root
+                        size="2"
+                        type="time"
+                        aria-label={`${label} close`}
+                        value={hours[day].close}
+                        onChange={(event) => updateDay(day, 'close', event.target.value)}
+                      />
+                    </label>
+                  </>
+                ) : null}
+              </Flex>
+            ))}
+
+            {message ? (
+              <Text size="2" color={message.startsWith('Saved') ? 'green' : 'red'} role="status">
+                {message}
+              </Text>
+            ) : null}
+
+            <Button type="submit" size="3" color="ruby" variant="solid" radius="full" loading={busy}>
+              Save studio hours
+            </Button>
+          </Flex>
+        </form>
+      </Flex>
+    </Card>
+  )
+}
+
+function AdminPricingPanel() {
+  const [catalog, setCatalog] = useState(() => readPricingCatalog())
+  const [message, setMessage] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  function newService(category = SERVICE_CATEGORIES[0].id): ServiceItem {
+    const serviceNumber = catalog.services.length + 1
+
+    return {
+      id: `custom-service-${serviceNumber}`,
+      category,
+      title: `New Service ${serviceNumber}`,
+      price: '$0',
+      duration: '30 min',
+      desc: 'Describe what this service includes.',
+      variants: [{ label: 'Standard', price: '$0' }],
+    }
+  }
+
+  function updateService(serviceId: string, patch: Partial<ServiceItem>) {
+    setCatalog((current) => ({
+      ...current,
+      services: current.services.map((service) =>
+        service.id === serviceId ? { ...service, ...patch } : service,
+      ),
+    }))
+  }
+
+  function updateVariant(serviceId: string, variantIndex: number, patch: Partial<ServiceVariant>) {
+    setCatalog((current) => ({
+      ...current,
+      services: current.services.map((service) => {
+        if (service.id !== serviceId) {
+          return service
+        }
+
+        const variants = [...(service.variants ?? [])]
+        variants[variantIndex] = { ...variants[variantIndex], ...patch }
+
+        return { ...service, variants }
+      }),
+    }))
+  }
+
+  function addVariant(serviceId: string) {
+    setCatalog((current) => ({
+      ...current,
+      services: current.services.map((service) => {
+        if (service.id !== serviceId) {
+          return service
+        }
+
+        const variants = [...(service.variants ?? []), { label: 'New option', price: '$0' }]
+        return { ...service, variants }
+      }),
+    }))
+  }
+
+  function removeVariant(serviceId: string, variantIndex: number) {
+    setCatalog((current) => ({
+      ...current,
+      services: current.services.map((service) => {
+        if (service.id !== serviceId) {
+          return service
+        }
+
+        const variants = (service.variants ?? []).filter((_, index) => index !== variantIndex)
+        return { ...service, variants: variants.length > 0 ? variants : undefined }
+      }),
+    }))
+  }
+
+  function addService() {
+    setCatalog((current) => ({
+      ...current,
+      services: [...current.services, newService(current.services[0]?.category ?? SERVICE_CATEGORIES[0].id)],
+    }))
+  }
+
+  function removeService(serviceId: string) {
+    setCatalog((current) => ({
+      ...current,
+      services: current.services.filter((service) => service.id !== serviceId),
+    }))
+  }
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault()
+    setBusy(true)
+    setMessage('')
+
+    const result = await updatePricingCatalog(catalog)
+
+    setBusy(false)
+    setMessage(result.error ? result.error : 'Saved the pricing menu.')
+  }
+
+  return (
+    <Card size="4" variant="classic" className="account-card">
+      <Flex direction="column" gap="4">
+        <Flex justify="between" align="start" gap="3" wrap="wrap">
+          <Flex direction="column" gap="1">
+            <Heading as="h2" size="5">
+              Pricing Menu
+            </Heading>
+            <Text size="2" color="gray">
+              Update the services, prices, and options guests see on the public menu.
+            </Text>
+          </Flex>
+
+          <Button type="button" size="2" color="ruby" variant="soft" radius="full" onClick={addService}>
+            <Plus size={14} /> Add service
+          </Button>
+        </Flex>
+
+        <form onSubmit={handleSubmit}>
+          <Flex direction="column" gap="4">
+            {catalog.services.length === 0 ? (
+              <Text size="2" color="gray">
+                No services yet. Add one to start your pricing menu.
+              </Text>
+            ) : (
+              catalog.services.map((service) => (
+                <Card key={service.id} size="2" variant="surface" style={{ border: '1px solid rgba(128, 128, 128, 0.25)' }}>
+                  <Flex direction="column" gap="3">
+                    <Flex justify="between" align="center" gap="3" wrap="wrap">
+                      <Text size="2" weight="bold">
+                        {service.title || 'Service'}
+                      </Text>
+
+                      <Button
+                        type="button"
+                        size="1"
+                        color="red"
+                        variant="soft"
+                        onClick={() => removeService(service.id)}
+                      >
+                        <Trash2 size={12} /> Remove
+                      </Button>
+                    </Flex>
+
+                    <Flex direction="column" gap="3">
+                      <Flex direction="column" gap="1">
+                        <Text as="label" size="2" weight="bold">
+                          Service title
+                        </Text>
+                        <TextField.Root
+                          size="2"
+                          value={service.title}
+                          onChange={(event) => updateService(service.id, { title: event.target.value })}
+                        />
+                      </Flex>
+
+                      <Flex gap="3" wrap="wrap">
+                        <Flex direction="column" gap="1" style={{ flex: '1 1 160px' }}>
+                          <Text as="label" size="2" weight="bold">
+                            Category
+                          </Text>
+                          <select
+                            value={service.category}
+                            onChange={(event) => updateService(service.id, { category: event.target.value as ServiceItem['category'] })}
+                            style={{
+                              padding: '0.7rem 0.8rem',
+                              borderRadius: '0.75rem',
+                              border: '1px solid rgba(128, 128, 128, 0.35)',
+                              background: 'transparent',
+                            }}
+                          >
+                            {SERVICE_CATEGORIES.map((category) => (
+                              <option key={category.id} value={category.id}>
+                                {category.label}
+                              </option>
+                            ))}
+                          </select>
+                        </Flex>
+
+                        <Flex direction="column" gap="1" style={{ flex: '1 1 150px' }}>
+                          <Text as="label" size="2" weight="bold">
+                            Price
+                          </Text>
+                          <TextField.Root
+                            size="2"
+                            value={service.price}
+                            onChange={(event) => updateService(service.id, { price: event.target.value })}
+                          />
+                        </Flex>
+
+                        <Flex direction="column" gap="1" style={{ flex: '1 1 140px' }}>
+                          <Text as="label" size="2" weight="bold">
+                            Duration
+                          </Text>
+                          <TextField.Root
+                            size="2"
+                            value={service.duration}
+                            onChange={(event) => updateService(service.id, { duration: event.target.value })}
+                          />
+                        </Flex>
+                      </Flex>
+
+                      <Flex direction="column" gap="1">
+                        <Text as="label" size="2" weight="bold">
+                          Description
+                        </Text>
+                        <textarea
+                          value={service.desc}
+                          onChange={(event) => updateService(service.id, { desc: event.target.value })}
+                          rows={3}
+                          style={{
+                            width: '100%',
+                            resize: 'vertical',
+                            borderRadius: '0.75rem',
+                            border: '1px solid rgba(128, 128, 128, 0.35)',
+                            padding: '0.7rem 0.8rem',
+                            background: 'transparent',
+                          }}
+                        />
+                      </Flex>
+
+                      <Flex direction="column" gap="2">
+                        <Flex justify="between" align="center" gap="2">
+                          <Text size="2" weight="bold">
+                            Options / variants
+                          </Text>
+                          <Button
+                            type="button"
+                            size="1"
+                            variant="soft"
+                            color="gray"
+                            onClick={() => addVariant(service.id)}
+                          >
+                            <Plus size={12} /> Add option
+                          </Button>
+                        </Flex>
+
+                        {(service.variants ?? []).length === 0 ? (
+                          <Text size="2" color="gray">
+                            This service has no variant list.
+                          </Text>
+                        ) : (
+                          (service.variants ?? []).map((variant, variantIndex) => (
+                            <Flex key={`${service.id}-${variant.label}-${variantIndex}`} gap="2" wrap="wrap" align="center">
+                              <Flex direction="column" gap="1" style={{ flex: '1 1 180px' }}>
+                                <Text as="label" size="2" weight="bold">
+                                  Label
+                                </Text>
+                                <TextField.Root
+                                  size="2"
+                                  value={variant.label}
+                                  onChange={(event) =>
+                                    updateVariant(service.id, variantIndex, { label: event.target.value })
+                                  }
+                                />
+                              </Flex>
+
+                              <Flex direction="column" gap="1" style={{ flex: '1 1 120px' }}>
+                                <Text as="label" size="2" weight="bold">
+                                  Price
+                                </Text>
+                                <TextField.Root
+                                  size="2"
+                                  value={variant.price}
+                                  onChange={(event) =>
+                                    updateVariant(service.id, variantIndex, { price: event.target.value })
+                                  }
+                                />
+                              </Flex>
+
+                              <Button
+                                type="button"
+                                size="1"
+                                color="red"
+                                variant="soft"
+                                onClick={() => removeVariant(service.id, variantIndex)}
+                                style={{ alignSelf: 'flex-end' }}
+                              >
+                                <Trash2 size={12} /> Remove
+                              </Button>
+                            </Flex>
+                          ))
+                        )}
+                      </Flex>
+                    </Flex>
+                  </Flex>
+                </Card>
+              ))
+            )}
+
+            {message ? (
+              <Text size="2" color={message.startsWith('Saved') ? 'green' : 'red'} role="status">
+                {message}
+              </Text>
+            ) : null}
+
+            <Button type="submit" size="3" color="ruby" variant="solid" radius="full" loading={busy}>
+              Save pricing
+            </Button>
+          </Flex>
+        </form>
       </Flex>
     </Card>
   )

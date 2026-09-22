@@ -1,8 +1,37 @@
+import { useEffect, useState } from 'react'
 import { Container, Grid, Flex, Heading, Text, Separator } from '@radix-ui/themes'
 import { MapPin, Phone, Mail, Camera } from 'lucide-react'
+import { DEFAULT_SITE_HOURS, loadSiteHours, siteHoursRows } from '../../lib/account'
 import './Footer.css'
 
 export function Footer() {
+  const [siteHours, setSiteHours] = useState(DEFAULT_SITE_HOURS)
+
+  useEffect(() => {
+    let active = true
+
+    const apply = async () => {
+      const next = await loadSiteHours()
+
+      if (active) {
+        setSiteHours(next)
+      }
+    }
+
+    void apply()
+
+    const handleUpdate = () => {
+      void apply()
+    }
+
+    window.addEventListener('dscott-site-hours-updated', handleUpdate)
+
+    return () => {
+      active = false
+      window.removeEventListener('dscott-site-hours-updated', handleUpdate)
+    }
+  }, [])
+
   return (
     <footer className="radix-footer">
       <Container size="4">
@@ -41,11 +70,11 @@ export function Footer() {
               Studio Hours
             </Heading>
             <Flex direction="column" gap="1">
-              <Text size="2" className="footer-hour-row">Mon - Wed: Closed</Text>
-              <Text size="2" className="footer-hour-row">Thursday: 5:00pm - 8:00pm</Text>
-              <Text size="2" className="footer-hour-row">Friday: 8:00am - 5:00pm</Text>
-              <Text size="2" className="footer-hour-row">Saturday: 8:00am - 6:00pm</Text>
-              <Text size="2" className="footer-hour-row">Sunday: 8:00am - 6:00pm</Text>
+              {siteHoursRows(siteHours).map(({ label, value }) => (
+                <Text key={label} size="2" className="footer-hour-row">
+                  {label}: {value}
+                </Text>
+              ))}
               <Text size="2" className="footer-highlight">Walk-ins Welcome Thu–Sun</Text>
             </Flex>
           </Flex>

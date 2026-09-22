@@ -1,8 +1,10 @@
 import { Sparkles, Star, Brush, Gem, Heart, Clock, ArrowRight, ShieldCheck } from 'lucide-react'
+import { readSiteHours, siteHoursSummary } from '../../lib/account'
 import { HeroCarousel } from './HeroCarousel'
 import './Hero.css'
 
 export function Hero() {
+  const siteHours = readSiteHours()
   return (
     <header className="radix-hero-section">
       <div className="hero-shell">
@@ -68,7 +70,7 @@ export function Hero() {
                 <span className="hero-tag">Today at D'Luxe Beauty</span>
                 <div className="hero-hours-row">
                   <Clock size={16} color="var(--gray-11)" />
-                  <span>Studio hours: Thu–Sun · Closed Mon–Wed</span>
+                  <span>Studio hours: {siteHoursSummary(siteHours)}</span>
                 </div>
               </div>
 
