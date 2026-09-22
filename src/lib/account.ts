@@ -23,33 +23,70 @@ export interface ActionResult {
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /**
+ * What `loadAccount` found. `ok` means the answer is final (session or no
+ * session); `failed` means the read itself broke, so the UI can offer a retry
+ * instead of telling a signed-in client they are signed out.
+ */
+export type AccountLoadResult =
+  | { status: 'ok'; account: AccountSnapshot | null }
+  | { status: 'failed'; error: string }
+
+/**
  * Everyone who signs in needs a profile row. The trigger in `supabase/schema.sql`
  * creates it at signup, so this only has to read it back.
  */
-export async function loadAccount(): Promise<AccountSnapshot | null> {
-  const { data } = await supabase.auth.getSession()
+export async function loadAccount(): Promise<AccountLoadResult> {
+  const { data, error: sessionError } = await supabase.auth.getSession()
+
+  if (sessionError) {
+    return { status: 'failed', error: sessionError.message }
+  }
+
   const user = data.session?.user
 
   if (!user) {
-    return null
+    return { status: 'ok', account: null }
   }
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
     .maybeSingle()
 
-  return {
-    userId: user.id,
-    email: user.email ?? '',
-    profile: (profile as Profile | null) ?? null,
+  if (profileError) {
+    return { status: 'failed', error: profileError.message }
   }
+
+  return {
+    status: 'ok',
+    account: {
+      userId: user.id,
+      email: user.email ?? '',
+      profile: (profile as Profile | null) ?? null,
+    },
+  }
+}
+
+/** The page's starting point when auth hands back a session but the profile read lags. */
+function sessionOf(session: { user: { id: string; email?: string | null } } | null): AccountSnapshot | null {
+  const user = session?.user
+
+  if (!user) {
+    return null
+  }
+
+  return { userId: user.id, email: user.email ?? '', profile: null }
+}
+
+export interface AuthResult extends ActionResult {
+  /** The session identity, so the page can sign in immediately without a reload. */
+  account: AccountSnapshot | null
 }
 
 export async function signUpWithEmail(
   fields: SignUpFields,
-): Promise<ActionResult & { needsConfirmation: boolean }> {
+): Promise<AuthResult & { needsConfirmation: boolean }> {
   const { data, error } = await supabase.auth.signUp({
     email: fields.email.trim(),
     password: fields.password,
@@ -59,20 +96,28 @@ export async function signUpWithEmail(
   })
 
   if (error) {
-    return { error: describeAuthError(error.message), needsConfirmation: false }
+    return { error: describeAuthError(error.message), needsConfirmation: false, account: null }
   }
 
   // With "Confirm email" switched on, signup returns a user but no session.
-  return { error: null, needsConfirmation: !data.session }
+  if (!data.session) {
+    return { error: null, needsConfirmation: true, account: null }
+  }
+
+  return { error: null, needsConfirmation: false, account: sessionOf(data.session) }
 }
 
-export async function signInWithEmail(fields: SignInFields): Promise<ActionResult> {
-  const { error } = await supabase.auth.signInWithPassword({
+export async function signInWithEmail(fields: SignInFields): Promise<AuthResult> {
+  const { data, error } = await supabase.auth.signInWithPassword({
     email: fields.email.trim(),
     password: fields.password,
   })
 
-  return { error: error ? describeAuthError(error.message) : null }
+  if (error) {
+    return { error: describeAuthError(error.message), account: null }
+  }
+
+  return { error: null, account: sessionOf(data.session) }
 }
 
 export async function signOut(): Promise<ActionResult> {

@@ -41,10 +41,12 @@ export function Footer() {
               Studio Hours
             </Heading>
             <Flex direction="column" gap="1">
-              <Text size="2" className="footer-hour-row">Mon - Fri: 9:00am - 7:00pm</Text>
-              <Text size="2" className="footer-hour-row">Saturday: 8:30am - 6:00pm</Text>
-              <Text size="2" className="footer-hour-row">Sunday: 10:00am - 4:00pm</Text>
-              <Text size="2" className="footer-highlight">Walk-ins Welcome Daily</Text>
+              <Text size="2" className="footer-hour-row">Mon - Wed: Closed</Text>
+              <Text size="2" className="footer-hour-row">Thursday: 5:00pm - 8:00pm</Text>
+              <Text size="2" className="footer-hour-row">Friday: 8:00am - 5:00pm</Text>
+              <Text size="2" className="footer-hour-row">Saturday: 8:00am - 6:00pm</Text>
+              <Text size="2" className="footer-hour-row">Sunday: 8:00am - 6:00pm</Text>
+              <Text size="2" className="footer-highlight">Walk-ins Welcome Thu–Sun</Text>
             </Flex>
           </Flex>
 
@@ -56,7 +58,7 @@ export function Footer() {
             <Flex direction="column" gap="2">
               <Flex align="center" gap="2">
                 <MapPin size={16} color="var(--ruby-9)" />
-                <Text size="2" className="footer-link">124 Main St, Suite 200</Text>
+                <Text size="2" className="footer-link">Stockbridge, GA</Text>
               </Flex>
               <Flex align="center" gap="2">
                 <Phone size={16} color="var(--ruby-9)" />

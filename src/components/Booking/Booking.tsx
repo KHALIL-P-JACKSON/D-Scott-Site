@@ -43,6 +43,8 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
   const [submitting, setSubmitting] = useState(false)
   const [account, setAccount] = useState<AccountSnapshot | null>(null)
   const [loadingAccount, setLoadingAccount] = useState(true)
+  const [accountError, setAccountError] = useState('')
+  const [accountRevision, setAccountRevision] = useState(0)
   const [formData, setFormData] = useState<BookingFormData>({
     name: '',
     phone: '',
@@ -57,14 +59,24 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
 
   useEffect(() => {
     let active = true
+    setLoadingAccount(true)
+    setAccountError('')
 
-    loadAccount().then((snapshot) => {
+    loadAccount().then((result) => {
       if (!active) {
         return
       }
 
-      setAccount(snapshot ?? null)
       setLoadingAccount(false)
+
+      if (result.status === 'failed') {
+        setAccount(null)
+        setAccountError(result.error)
+        return
+      }
+
+      const snapshot = result.account
+      setAccount(snapshot)
 
       // A signed-in client should not have to retype what the studio already
       // holds; fill only the fields they have not touched yet.
@@ -81,7 +93,7 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
     return () => {
       active = false
     }
-  }, [])
+  }, [accountRevision])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -169,7 +181,7 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
                     </Flex>
                     <Flex direction="column">
                       <Text size="2" weight="bold" className="side-info-label">Studio Location</Text>
-                      <Text size="2" className="side-info-val">124 Main Street, Suite 200, Downtown</Text>
+                      <Text size="2" className="side-info-val">Stockbridge, GA</Text>
                     </Flex>
                   </Flex>
 
@@ -179,9 +191,11 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
                     </Flex>
                     <Flex direction="column">
                       <Text size="2" weight="bold" className="side-info-label">Studio Hours</Text>
-                      <Text size="2" className="side-info-val">Mon - Fri: 9:00 AM – 7:00 PM</Text>
-                      <Text size="2" className="side-info-val">Saturday: 8:30 AM – 6:00 PM</Text>
-                      <Text size="2" className="side-info-val">Sunday: 10:00 AM – 4:00 PM</Text>
+                      <Text size="2" className="side-info-val">Mon - Wed: Closed</Text>
+                      <Text size="2" className="side-info-val">Thursday: 5:00 PM – 8:00 PM</Text>
+                      <Text size="2" className="side-info-val">Friday: 8:00 AM – 5:00 PM</Text>
+                      <Text size="2" className="side-info-val">Saturday: 8:00 AM – 6:00 PM</Text>
+                      <Text size="2" className="side-info-val">Sunday: 8:00 AM – 6:00 PM</Text>
                     </Flex>
                   </Flex>
 
@@ -218,6 +232,24 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
                     Checking your account…
                   </Text>
                 </Flex>
+              ) : accountError ? (
+                <Callout.Root color="ruby" size="3" variant="surface" className="booking-gate-callout">
+                  <Callout.Icon>
+                    <AlertCircle size={24} />
+                  </Callout.Icon>
+                  <Callout.Text>
+                    <strong>Could not check your account.</strong> {accountError}{' '}
+                    <Button
+                      size="1"
+                      variant="soft"
+                      color="ruby"
+                      ml="2"
+                      onClick={() => setAccountRevision((r) => r + 1)}
+                    >
+                      Try again
+                    </Button>
+                  </Callout.Text>
+                </Callout.Root>
               ) : gate === 'signed-out' ? (
                 <Callout.Root color="ruby" size="3" variant="surface" className="booking-gate-callout">
                   <Callout.Icon>

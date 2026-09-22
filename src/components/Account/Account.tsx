@@ -29,6 +29,7 @@ import './Account.css'
 
 type AccountView =
   | { status: 'loading' }
+  | { status: 'failed'; error: string }
   | { status: 'signed-out' }
   | { status: 'signed-in'; account: AccountSnapshot }
 
@@ -46,12 +47,18 @@ export function Account() {
   useEffect(() => {
     let active = true
 
-    loadAccount().then((account) => {
+    loadAccount().then((result) => {
       if (!active) {
         return
       }
 
-      setView(account ? { status: 'signed-in', account } : { status: 'signed-out' })
+      if (result.status === 'failed') {
+        setView({ status: 'failed', error: result.error })
+      } else if (result.account) {
+        setView({ status: 'signed-in', account: result.account })
+      } else {
+        setView({ status: 'signed-out' })
+      }
     })
 
     return () => {
@@ -60,6 +67,21 @@ export function Account() {
   }, [revision])
 
   const refresh = () => setRevision((current) => current + 1)
+
+  /**
+   * Trusts the session auth just handed back, so the page never blanks a
+   * signed-in client back to the signup cards when the profile read stumbles.
+   * `loadAccount` only enriches: if it returns nothing, the session stands.
+   */
+  async function adoptSession(account: AccountSnapshot) {
+    setView({ status: 'signed-in', account })
+
+    const enriched = await loadAccount()
+
+    if (enriched.status === 'ok' && enriched.account) {
+      setView({ status: 'signed-in', account: enriched.account })
+    }
+  }
 
   return (
     <section id="account" className="radix-account-section">
@@ -81,10 +103,19 @@ export function Account() {
           <Text size="2" color="gray" align="center">
             Checking your session…
           </Text>
+        ) : view.status === 'failed' ? (
+          <Flex direction="column" align="center" gap="3" py="4">
+            <Text size="2" color="red" align="center">
+              {view.error || 'Failed to load your account.'}
+            </Text>
+            <Button size="2" variant="soft" color="ruby" onClick={refresh}>
+              Try again
+            </Button>
+          </Flex>
         ) : view.status === 'signed-out' ? (
           <Grid columns={{ initial: '1', md: '2' }} gap="5">
-            <SignUpCard onSignedUp={refresh} />
-            <SignInCard onSignedIn={refresh} />
+            <SignUpCard onSignedUp={adoptSession} />
+            <SignInCard onSignedIn={adoptSession} />
           </Grid>
         ) : (
           <SignedInPanels account={view.account} onChanged={refresh} />
@@ -157,7 +188,7 @@ function SignedInPanels({
   )
 }
 
-function SignUpCard({ onSignedUp }: { onSignedUp: () => void }) {
+function SignUpCard({ onSignedUp }: { onSignedUp: (account: AccountSnapshot) => void }) {
   const [fields, setFields] = useState<SignUpFields>({
     fullName: '',
     email: '',
@@ -196,7 +227,10 @@ function SignUpCard({ onSignedUp }: { onSignedUp: () => void }) {
       return
     }
 
-    onSignedUp()
+    // No session here by construction, so the client stays signed out.
+    if (result.account) {
+      onSignedUp(result.account)
+    }
   }
 
   return (
@@ -309,7 +343,7 @@ function SignUpCard({ onSignedUp }: { onSignedUp: () => void }) {
   )
 }
 
-function SignInCard({ onSignedIn }: { onSignedIn: () => void }) {
+function SignInCard({ onSignedIn }: { onSignedIn: (account: AccountSnapshot) => void }) {
   const [fields, setFields] = useState<SignInFields>({ email: '', password: '' })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [message, setMessage] = useState('')
@@ -337,7 +371,9 @@ function SignInCard({ onSignedIn }: { onSignedIn: () => void }) {
       return
     }
 
-    onSignedIn()
+    if (result.account) {
+      onSignedIn(result.account)
+    }
   }
 
   return (

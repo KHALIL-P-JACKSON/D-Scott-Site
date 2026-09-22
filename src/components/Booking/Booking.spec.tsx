@@ -43,7 +43,7 @@ const verifiedAccount: AccountSnapshot = {
 beforeEach(() => {
   vi.mocked(loadAccount).mockReset()
   vi.mocked(createBookingRequest).mockReset()
-  vi.mocked(loadAccount).mockResolvedValue(verifiedAccount)
+  vi.mocked(loadAccount).mockResolvedValue({ status: 'ok', account: verifiedAccount })
   vi.mocked(createBookingRequest).mockResolvedValue({ error: null })
 })
 
@@ -102,8 +102,9 @@ describe('Booking', () => {
   it('advertises the studio address, hours and phone number', async () => {
     await setup()
 
-    expect(screen.getByText('124 Main Street, Suite 200, Downtown')).toBeInTheDocument()
-    expect(screen.getByText(/Mon - Fri/)).toBeInTheDocument()
+    expect(screen.getByText('Stockbridge, GA')).toBeInTheDocument()
+    expect(screen.getByText('Mon - Wed: Closed')).toBeInTheDocument()
+    expect(screen.getByText(/Thursday: 5:00 PM/)).toBeInTheDocument()
     expect(screen.getByText('(555) 234-5678')).toBeInTheDocument()
   })
 
@@ -116,7 +117,7 @@ describe('Booking', () => {
   })
 
   it('asks a visitor to sign in before the form', async () => {
-    vi.mocked(loadAccount).mockResolvedValue(null)
+    vi.mocked(loadAccount).mockResolvedValue({ status: 'ok', account: null })
     render(
       <Booking selectedService="" onServiceChange={() => {}} onClearSelectedService={() => {}} />,
     )
@@ -127,8 +128,11 @@ describe('Booking', () => {
 
   it('asks a signed-in client for an ID before the form', async () => {
     vi.mocked(loadAccount).mockResolvedValue({
-      ...verifiedAccount,
-      profile: verifiedAccount.profile && { ...verifiedAccount.profile, id_status: 'unverified' },
+      status: 'ok',
+      account: {
+        ...verifiedAccount,
+        profile: verifiedAccount.profile && { ...verifiedAccount.profile, id_status: 'unverified' },
+      },
     })
     render(
       <Booking selectedService="" onServiceChange={() => {}} onClearSelectedService={() => {}} />,
@@ -274,5 +278,31 @@ describe('Booking', () => {
       .filter((message) => invalidNesting.test(message))
 
     expect(warnings).toEqual([])
+  })
+
+  it('renders retry feedback when checking the account fails and allows retrying', async () => {
+    vi.mocked(loadAccount).mockResolvedValueOnce({
+      status: 'failed',
+      error: 'Unable to reach database',
+    })
+
+    render(
+      <Booking selectedService="" onServiceChange={() => {}} onClearSelectedService={() => {}} />,
+    )
+
+    expect(await screen.findByText(/could not check your account/i)).toBeInTheDocument()
+    expect(screen.getByText(/Unable to reach database/)).toBeInTheDocument()
+
+    const retryButton = screen.getByRole('button', { name: /try again/i })
+    expect(retryButton).toBeInTheDocument()
+
+    vi.mocked(loadAccount).mockResolvedValueOnce({
+      status: 'ok',
+      account: verifiedAccount,
+    })
+
+    fireEvent.click(retryButton)
+
+    expect(await screen.findByLabelText(/full name/i)).toBeInTheDocument()
   })
 })

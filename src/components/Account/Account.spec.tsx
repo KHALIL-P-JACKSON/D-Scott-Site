@@ -60,7 +60,7 @@ const unverifiedAccount: AccountSnapshot = {
 
 /** Renders the page and waits for the session check to settle. */
 async function renderAccount(account: AccountSnapshot | null) {
-  vi.mocked(loadAccount).mockResolvedValue(account)
+  vi.mocked(loadAccount).mockResolvedValue({ status: 'ok', account })
   render(<Account />)
 
   await screen.findByRole('heading', {
@@ -147,7 +147,11 @@ describe('a visitor with no account', () => {
 
   it('asks a new client to confirm email when no session comes back', async () => {
     await renderAccount(null)
-    vi.mocked(signUpWithEmail).mockResolvedValue({ error: null, needsConfirmation: true })
+    vi.mocked(signUpWithEmail).mockResolvedValue({
+      error: null,
+      needsConfirmation: true,
+      account: null,
+    })
     const card = signUpCard()
 
     fillSignUp(card)
@@ -168,6 +172,7 @@ describe('a visitor with no account', () => {
     vi.mocked(signUpWithEmail).mockResolvedValue({
       error: 'An account with that email already exists — try signing in instead.',
       needsConfirmation: false,
+      account: null,
     })
     const card = signUpCard()
 
@@ -179,8 +184,10 @@ describe('a visitor with no account', () => {
 
   it('signs in and shows the account it just loaded', async () => {
     vi.mocked(loadAccount).mockReset()
-    vi.mocked(loadAccount).mockResolvedValueOnce(null).mockResolvedValueOnce(approvedAccount)
-    vi.mocked(signInWithEmail).mockResolvedValue({ error: null })
+    vi.mocked(loadAccount)
+      .mockResolvedValueOnce({ status: 'ok', account: null })
+      .mockResolvedValueOnce({ status: 'ok', account: approvedAccount })
+    vi.mocked(signInWithEmail).mockResolvedValue({ error: null, account: approvedAccount })
     render(<Account />)
     await screen.findByRole('heading', { name: 'Create an account' })
     const heading = screen.getByRole('heading', { name: 'Sign in' })
@@ -217,7 +224,7 @@ describe('a signed-in client', () => {
     expect(screen.getByText(/not uploaded/i)).toBeInTheDocument()
 
     vi.mocked(signOut).mockResolvedValue({ error: null })
-    vi.mocked(loadAccount).mockResolvedValue(null)
+    vi.mocked(loadAccount).mockResolvedValue({ status: 'ok', account: null })
     fireEvent.click(screen.getByRole('button', { name: /sign out/i }))
 
     expect(await screen.findByRole('heading', { name: 'Create an account' })).toBeInTheDocument()
@@ -248,5 +255,27 @@ describe('a signed-in client', () => {
     fireEvent.click(screen.getByRole('button', { name: /upload id/i }))
 
     expect(await screen.findByText(/different account/i)).toBeInTheDocument()
+  })
+
+  it('renders retry feedback when loadAccount fails and allows retrying', async () => {
+    vi.mocked(loadAccount).mockResolvedValueOnce({
+      status: 'failed',
+      error: 'Network connection error',
+    })
+
+    render(<Account />)
+
+    expect(await screen.findByText('Network connection error')).toBeInTheDocument()
+    const retryButton = screen.getByRole('button', { name: /try again/i })
+    expect(retryButton).toBeInTheDocument()
+
+    vi.mocked(loadAccount).mockResolvedValueOnce({
+      status: 'ok',
+      account: approvedAccount,
+    })
+
+    fireEvent.click(retryButton)
+
+    expect(await screen.findByRole('heading', { name: 'Your account' })).toBeInTheDocument()
   })
 })

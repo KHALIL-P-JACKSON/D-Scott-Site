@@ -38,7 +38,7 @@ const verifiedAccount: AccountSnapshot = {
 
 beforeEach(() => {
   vi.mocked(loadAccount).mockReset()
-  vi.mocked(loadAccount).mockResolvedValue(verifiedAccount)
+  vi.mocked(loadAccount).mockResolvedValue({ status: 'ok', account: verifiedAccount })
 })
 
 describe('the page as a whole', () => {

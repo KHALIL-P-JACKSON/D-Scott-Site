@@ -90,8 +90,40 @@ describe('loadAccount', () => {
   it('reports nobody signed in when there is no session', async () => {
     mocks.getSession.mockResolvedValue({ data: { session: null }, error: null })
 
-    expect(await loadAccount()).toBeNull()
+    expect(await loadAccount()).toEqual({ status: 'ok', account: null })
     expect(mocks.from).not.toHaveBeenCalled()
+  })
+
+  it('propagates getSession errors instead of treating as signed-out', async () => {
+    mocks.getSession.mockResolvedValue({
+      data: { session: null },
+      error: { message: 'Network error reaching auth' },
+    })
+
+    expect(await loadAccount()).toEqual({
+      status: 'failed',
+      error: 'Network error reaching auth',
+    })
+    expect(mocks.from).not.toHaveBeenCalled()
+  })
+
+  it('propagates profile query errors instead of treating as missing profile', async () => {
+    signedInAs('ashley@example.com')
+    mocks.from.mockReturnValue({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: async () => ({
+            data: null,
+            error: { message: 'Failed to fetch profile' },
+          }),
+        }),
+      }),
+    })
+
+    expect(await loadAccount()).toEqual({
+      status: 'failed',
+      error: 'Failed to fetch profile',
+    })
   })
 
   it('returns the session together with the profile row', async () => {
@@ -99,9 +131,12 @@ describe('loadAccount', () => {
     profileRowFor(profile({ id_status: 'approved' }))
 
     expect(await loadAccount()).toEqual({
-      userId: 'u-1',
-      email: 'ashley@example.com',
-      profile: profile({ id_status: 'approved' }),
+      status: 'ok',
+      account: {
+        userId: 'u-1',
+        email: 'ashley@example.com',
+        profile: profile({ id_status: 'approved' }),
+      },
     })
     expect(mocks.from).toHaveBeenCalledWith('profiles')
   })
@@ -110,7 +145,10 @@ describe('loadAccount', () => {
     signedInAs(null)
     profileRowFor(null)
 
-    expect(await loadAccount()).toEqual({ userId: 'u-1', email: '', profile: null })
+    expect(await loadAccount()).toEqual({
+      status: 'ok',
+      account: { userId: 'u-1', email: '', profile: null },
+    })
   })
 })
 
@@ -127,6 +165,7 @@ describe('signUpWithEmail', () => {
     expect(await signUpWithEmail(signUpFields)).toEqual({
       error: null,
       needsConfirmation: false,
+      account: { userId: 'u-1', email: '', profile: null },
     })
     expect(mocks.signUp).toHaveBeenCalledWith({
       email: 'ashley@example.com',
@@ -141,6 +180,7 @@ describe('signUpWithEmail', () => {
     expect(await signUpWithEmail(signUpFields)).toEqual({
       error: null,
       needsConfirmation: true,
+      account: null,
     })
   })
 
@@ -153,6 +193,7 @@ describe('signUpWithEmail', () => {
     expect(await signUpWithEmail(signUpFields)).toEqual({
       error: 'An account with that email already exists — try signing in instead.',
       needsConfirmation: false,
+      account: null,
     })
   })
 })
@@ -168,7 +209,7 @@ describe('signInWithEmail', () => {
     mocks.signInWithPassword.mockResolvedValue({ data: { session: {} }, error: null })
 
     expect(await signInWithEmail({ email: ' ashley@example.com ', password: 'supersecret1' }))
-      .toEqual({ error: null })
+      .toEqual({ error: null, account: null })
     expect(mocks.signInWithPassword).toHaveBeenCalledWith({
       email: 'ashley@example.com',
       password: 'supersecret1',
@@ -183,6 +224,7 @@ describe('signInWithEmail', () => {
 
     expect(await signInWithEmail({ email: 'ashley@example.com', password: 'nope' })).toEqual({
       error: 'That email and password do not match an account.',
+      account: null,
     })
   })
 })

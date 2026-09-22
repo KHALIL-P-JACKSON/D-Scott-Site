@@ -68,7 +68,7 @@ export function Hero() {
                 <span className="hero-tag">Today at D'Luxe Beauty</span>
                 <div className="hero-hours-row">
                   <Clock size={16} color="var(--gray-11)" />
-                  <span>Studio hours: Mon–Fri 9:00 AM – 7:00 PM</span>
+                  <span>Studio hours: Thu–Sun · Closed Mon–Wed</span>
                 </div>
               </div>
 
