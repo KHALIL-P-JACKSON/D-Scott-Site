@@ -130,6 +130,18 @@ export function getDefaultServiceOption(service: ServiceItem): string {
   return getServiceOptionValue(service, firstVariant)
 }
 
+/**
+ * The reverse of `getServiceOptionValue`: the menu item a booking option came
+ * from. Returns undefined for anything the menu does not offer.
+ */
+export function getServiceByOptionValue(value: string): ServiceItem | undefined {
+  return SERVICES.find(
+    (service) =>
+      getServiceOptionValue(service) === value ||
+      (service.variants ?? []).some((variant) => getServiceOptionValue(service, variant) === value),
+  )
+}
+
 // Booking form options are generated from the menu so pricing never drifts out of sync.
 export const SERVICE_OPTION_GROUPS: ServiceOptionGroup[] = SERVICE_CATEGORIES.map((category) => ({
   label: category.label,

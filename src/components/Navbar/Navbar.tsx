@@ -19,6 +19,7 @@ export function Navbar() {
             <a href="#why-us" className="nav-link">Why Us</a>
             <a href="#reviews" className="nav-link">Reviews</a>
             <a href="#hours" className="nav-link">Hours & Location</a>
+            <a href="#/account" className="nav-link">Account</a>
           </Flex>
 
           {/* Action Group */}
