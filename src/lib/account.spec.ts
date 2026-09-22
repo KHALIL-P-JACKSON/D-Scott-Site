@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Profile, SignUpFields } from '../types'
+import type { PricingCatalog, Profile, SignUpFields, SiteHours } from '../types'
+import { DEFAULT_PRICING_CATALOG } from '../data/services'
 import {
   DEFAULT_SITE_HOURS,
   ID_BUCKET,
@@ -15,6 +16,7 @@ import {
   loadSiteHours,
   notifyPricingUpdated,
   notifySiteHoursUpdated,
+  openDayLabels,
   passwordError,
   readPricingCatalog,
   readSiteHours,
@@ -541,6 +543,66 @@ describe('pricing catalog persistence and updates', () => {
     }))
   })
 
+  it('keeps an intentionally empty service list instead of restoring the defaults', () => {
+    const { store } = stubWindowWithStorage()
+
+    // An admin can hide the whole menu, and that choice has to survive a reload.
+    store.set('dscott-pricing-catalog', JSON.stringify({
+      categories: [{ id: 'acrylic-sets', label: 'Acrylic Sets', color: 'ruby' }],
+      services: [],
+    }))
+
+    expect(readPricingCatalog()).toEqual({
+      categories: [{ id: 'acrylic-sets', label: 'Acrylic Sets', color: 'ruby' }],
+      services: [],
+    })
+
+    // Only a missing or malformed list falls back to the published one.
+    store.set('dscott-pricing-catalog', JSON.stringify({ categories: [] }))
+    expect(readPricingCatalog().services).toEqual(DEFAULT_PRICING_CATALOG.services)
+  })
+
+  it('saves remotely even when the browser refuses to keep a local copy', async () => {
+    const dispatch = vi.fn()
+    const upsert = vi.fn(async () => ({ error: null }))
+
+    vi.stubGlobal('Event', class {
+      type: string
+
+      constructor(type: string) {
+        this.type = type
+      }
+    })
+
+    // Private browsing and full quotas make `setItem` throw; the database write
+    // is the one that actually matters.
+    vi.stubGlobal('window', {
+      localStorage: {
+        getItem: () => null,
+        setItem: () => {
+          throw new Error('QuotaExceededError')
+        },
+        removeItem: () => {},
+        clear: () => {},
+      },
+      dispatchEvent: dispatch,
+    })
+
+    mocks.from.mockReturnValue({ upsert })
+
+    await expect(updatePricingCatalog(DEFAULT_PRICING_CATALOG)).resolves.toEqual({ error: null })
+    expect(upsert).toHaveBeenCalledTimes(1)
+
+    await expect(updateSiteHours(DEFAULT_SITE_HOURS)).resolves.toEqual({ error: null })
+    expect(upsert).toHaveBeenCalledTimes(2)
+
+    // Listeners still hear about a save they cannot read back locally.
+    expect(dispatch.mock.calls.map((call) => call[0].type)).toEqual([
+      'dscott-pricing-updated',
+      'dscott-site-hours-updated',
+    ])
+  })
+
   it('loads the remote pricing catalog when present and saves it locally', async () => {
     stubWindowWithStorage()
     mocks.from.mockReturnValue({
@@ -605,8 +667,8 @@ describe('pricing catalog persistence and updates', () => {
 
   it('updates the catalog locally and notifies listeners', async () => {
     const { dispatch, store } = stubWindowWithStorage()
-    const catalog = {
-      categories: DEFAULT_SITE_HOURS ? [{ id: 'gel-manicure', label: 'Gel Manicure', color: 'purple' }] : [],
+    const catalog: PricingCatalog = {
+      categories: [{ id: 'gel-manicure', label: 'Gel Manicure', color: 'purple' }],
       services: [{
         id: 'gel-manicure',
         category: 'gel-manicure',
@@ -762,6 +824,38 @@ describe('site-hours persistence and formatting', () => {
     expect(siteHoursSummary(allClosed)).toBe('Closed every day')
     expect(siteHoursRows(mixed)).toHaveLength(3)
     expect(siteHoursSummary(mixed)).toContain('Closed')
+  })
+
+  it('names each stretch of open days instead of bridging the closed days between them', () => {
+    const splitWeek: SiteHours = {
+      mon: { closed: false, open: '09:00', close: '17:00' },
+      tue: { closed: true, open: '09:00', close: '17:00' },
+      wed: { closed: true, open: '09:00', close: '17:00' },
+      thu: { closed: false, open: '09:00', close: '17:00' },
+      fri: { closed: false, open: '09:00', close: '17:00' },
+      sat: { closed: false, open: '09:00', close: '17:00' },
+      sun: { closed: false, open: '09:00', close: '17:00' },
+    }
+
+    // `Monday - Sun` would claim Tuesday and Wednesday are open too.
+    expect(siteHoursSummary(splitWeek)).toBe('Monday, Thu - Sun · Closed Tue - Wed')
+    expect(siteHoursSummary(splitWeek)).not.toContain('Monday - Sun')
+
+    // The footer walks the same schedule, so it reads the runs back one by one.
+    expect(openDayLabels(splitWeek)).toEqual(['Monday', 'Thursday–Sunday'])
+    expect(openDayLabels({ ...splitWeek, mon: { closed: true, open: '09:00', close: '17:00' } }))
+      .toEqual(['Thursday–Sunday'])
+    expect(openDayLabels({ ...splitWeek, sun: { closed: true, open: '09:00', close: '17:00' } }))
+      .toEqual(['Monday', 'Thursday–Saturday'])
+    expect(openDayLabels(DEFAULT_SITE_HOURS)).toEqual(['Thursday–Sunday'])
+    expect(openDayLabels({
+      ...splitWeek,
+      mon: { closed: true, open: '09:00', close: '17:00' },
+      thu: { closed: true, open: '09:00', close: '17:00' },
+      fri: { closed: true, open: '09:00', close: '17:00' },
+      sat: { closed: true, open: '09:00', close: '17:00' },
+      sun: { closed: true, open: '09:00', close: '17:00' },
+    })).toEqual([])
   })
 
   it('dispatches the site-hours update event directly', () => {

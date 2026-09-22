@@ -193,7 +193,9 @@ function normalizePricingCatalog(catalog: Partial<PricingCatalog> | null | undef
     ? (catalog.categories as PricingCatalog['categories'])
     : fallback.categories
 
-  const services = Array.isArray(catalog.services) && catalog.services.length > 0
+  // An empty list is a deliberate choice — an admin may hide the whole menu — so
+  // only a missing or malformed value falls back to the published price list.
+  const services = Array.isArray(catalog.services)
     ? (catalog.services as PricingCatalog['services'])
     : fallback.services
 
@@ -261,7 +263,12 @@ export async function updatePricingCatalog(catalog: PricingCatalog): Promise<Act
   const normalized = normalizePricingCatalog(catalog)
 
   if (typeof window !== 'undefined') {
-    window.localStorage.setItem(PRICING_KEY, JSON.stringify(normalized))
+    try {
+      window.localStorage.setItem(PRICING_KEY, JSON.stringify(normalized))
+    } catch {
+      // A full or blocked storage must not stop the remote save below.
+    }
+
     notifyPricingUpdated()
   }
 
@@ -322,7 +329,12 @@ export async function updateSiteHours(hours: SiteHours): Promise<ActionResult> {
   const normalized = normalizeSiteHours(hours)
 
   if (typeof window !== 'undefined') {
-    window.localStorage.setItem(SITE_HOURS_KEY, JSON.stringify(normalized))
+    try {
+      window.localStorage.setItem(SITE_HOURS_KEY, JSON.stringify(normalized))
+    } catch {
+      // A full or blocked storage must not stop the remote save below.
+    }
+
     notifySiteHoursUpdated()
   }
 
@@ -399,12 +411,49 @@ export function siteHoursSummary(hours: SiteHours): string {
     return 'Closed every day'
   }
 
-  const first = openRows[0].label
-  const last = openRows[openRows.length - 1].label
+  // Separate runs of open days must stay separate: joining the first and last
+  // label would claim the closed days in between are open too.
+  const openLabel = openRows.map((row) => row.label).join(', ')
   const closedRows = rows.filter((row) => row.value === 'Closed')
-  const closedLabel = closedRows.length > 0 ? ` · Closed ${closedRows[0].label}` : ''
+  const closedLabel = closedRows.length > 0
+    ? ` · Closed ${closedRows.map((row) => row.label).join(', ')}`
+    : ''
 
-  return `${first}–${last}${closedLabel}`
+  return `${openLabel}${closedLabel}`
+}
+
+/**
+ * The days that can take walk-ins, grouped into consecutive runs so an unbroken
+ * stretch reads as one range: `Thursday–Sunday`, `Monday, Wednesday`.
+ */
+export function openDayLabels(hours: SiteHours): string[] {
+  const labels: string[] = []
+  let index = 0
+
+  while (index < SITE_HOURS_ORDER.length) {
+    const firstDay = SITE_HOURS_ORDER[index]
+
+    if (hours[firstDay].closed) {
+      index += 1
+      continue
+    }
+
+    let lastDay = firstDay
+    let cursor = index + 1
+
+    while (cursor < SITE_HOURS_ORDER.length && !hours[SITE_HOURS_ORDER[cursor]].closed) {
+      lastDay = SITE_HOURS_ORDER[cursor]
+      cursor += 1
+    }
+
+    labels.push(
+      firstDay === lastDay ? longDayName(firstDay) : `${longDayName(firstDay)}–${longDayName(lastDay)}`,
+    )
+
+    index = cursor
+  }
+
+  return labels
 }
 
 function normalizeSiteHours(hours: Partial<SiteHours> | null | undefined): SiteHours {

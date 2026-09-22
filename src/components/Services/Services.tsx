@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Container, Flex, Heading, Text, Badge, Card, Button, Tabs, Grid, Box } from '@radix-ui/themes'
 import { Clock, ArrowRight } from 'lucide-react'
 import { SERVICES, SERVICE_CATEGORIES, getDefaultServiceOption } from '../../data/services'
-import { loadPricingCatalog } from '../../lib/account'
+import { loadPricingCatalog, readPricingCatalog } from '../../lib/account'
 import { getCtaLabel } from '../../lib/services'
 import './Services.css'
 
@@ -27,8 +27,12 @@ export function Services({ onSelectService }: ServicesProps) {
 
     void apply()
 
+    // A local save fires while the matching database write is still in flight, so
+    // apply the browser copy the editor just wrote rather than racing the row.
     const handleUpdate = () => {
-      void apply()
+      if (active) {
+        setServices(readPricingCatalog().services)
+      }
     }
 
     window.addEventListener('dscott-pricing-updated', handleUpdate)

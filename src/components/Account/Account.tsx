@@ -49,6 +49,20 @@ const CONFIRM_EMAIL_NOTICE =
 
 const ID_ACCEPT = 'image/jpeg,image/png,image/webp,application/pdf'
 
+/**
+ * React keys and both service handlers match on `id`, so a new service needs a
+ * value that cannot collide with one already in the menu — a running count would
+ * repeat itself as soon as a service is removed.
+ */
+function createCustomServiceId(): string {
+  const unique =
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+
+  return `custom-service-${unique}`
+}
+
 export function Account() {
   const [view, setView] = useState<AccountView>({ status: 'loading' })
   const [revision, setRevision] = useState(0)
@@ -570,10 +584,13 @@ function AdminHoursPanel() {
     setBusy(true)
     setMessage('')
 
-    const result = await updateSiteHours(hours)
+    try {
+      const result = await updateSiteHours(hours)
 
-    setBusy(false)
-    setMessage(result.error ? result.error : 'Saved the studio hours.')
+      setMessage(result.error ? result.error : 'Saved the studio hours.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   const days = [
@@ -667,7 +684,7 @@ function AdminPricingPanel() {
     const serviceNumber = catalog.services.length + 1
 
     return {
-      id: `custom-service-${serviceNumber}`,
+      id: createCustomServiceId(),
       category,
       title: `New Service ${serviceNumber}`,
       price: '$0',
@@ -749,10 +766,13 @@ function AdminPricingPanel() {
     setBusy(true)
     setMessage('')
 
-    const result = await updatePricingCatalog(catalog)
+    try {
+      const result = await updatePricingCatalog(catalog)
 
-    setBusy(false)
-    setMessage(result.error ? result.error : 'Saved the pricing menu.')
+      setMessage(result.error ? result.error : 'Saved the pricing menu.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
