@@ -59,23 +59,22 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
 
   useEffect(() => {
     let active = true
-    setLoadingAccount(true)
-    setAccountError('')
 
     loadAccount().then((result) => {
       if (!active) {
         return
       }
 
-      setLoadingAccount(false)
-
       if (result.status === 'failed') {
+        setLoadingAccount(false)
         setAccount(null)
         setAccountError(result.error)
         return
       }
 
       const snapshot = result.account
+      setAccountError('')
+      setLoadingAccount(false)
       setAccount(snapshot)
 
       // A signed-in client should not have to retype what the studio already
