@@ -3,10 +3,12 @@ import { fireEvent, render, screen, within } from '../../test/render'
 import type { AccountSnapshot, Profile } from '../../types'
 import {
   loadAccount,
+  readSiteHours,
   signInWithEmail,
   signOut,
   signUpWithEmail,
   updateProfileDetails,
+  updateSiteHours,
   uploadIdDocument,
 } from '../../lib/account'
 import { Account } from './Account'
@@ -24,10 +26,12 @@ vi.mock('../../lib/account', async () => {
   return {
     ...actual,
     loadAccount: vi.fn(),
+    readSiteHours: vi.fn(),
     signUpWithEmail: vi.fn(),
     signInWithEmail: vi.fn(),
     signOut: vi.fn(),
     updateProfileDetails: vi.fn(),
+    updateSiteHours: vi.fn(),
     uploadIdDocument: vi.fn(),
   }
 })
@@ -81,10 +85,12 @@ function submitFormNamed(name: RegExp) {
 
 beforeEach(() => {
   vi.mocked(loadAccount).mockReset()
+  vi.mocked(readSiteHours).mockReset()
   vi.mocked(signUpWithEmail).mockReset()
   vi.mocked(signInWithEmail).mockReset()
   vi.mocked(signOut).mockReset()
   vi.mocked(updateProfileDetails).mockReset()
+  vi.mocked(updateSiteHours).mockReset()
   vi.mocked(uploadIdDocument).mockReset()
 })
 
@@ -242,6 +248,38 @@ describe('a signed-in client', () => {
       fullName: 'Ashley D',
       phone: '(555) 111-2222',
     })
+  })
+
+  it('shows an admin hours editor and saves the updated schedule', async () => {
+    const adminAccount: AccountSnapshot = {
+      userId: 'admin-1',
+      email: 'studio@dscott.com',
+      profile: profile({ id: 'admin-1', is_admin: true, full_name: 'Studio Admin' }),
+    }
+
+    vi.mocked(readSiteHours).mockReturnValue({
+      mon: { closed: true, open: '09:00', close: '17:00' },
+      tue: { closed: true, open: '09:00', close: '17:00' },
+      wed: { closed: true, open: '09:00', close: '17:00' },
+      thu: { closed: false, open: '17:00', close: '20:00' },
+      fri: { closed: false, open: '08:00', close: '17:00' },
+      sat: { closed: false, open: '08:00', close: '18:00' },
+      sun: { closed: false, open: '08:00', close: '18:00' },
+    })
+    vi.mocked(updateSiteHours).mockResolvedValue({ error: null })
+
+    await renderAccount(adminAccount)
+
+    expect(screen.getByRole('heading', { name: /studio hours/i })).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText(/thursday open/i), { target: { value: '18:00' } })
+    fireEvent.change(screen.getByLabelText(/thursday close/i), { target: { value: '21:00' } })
+    fireEvent.click(screen.getByRole('button', { name: /save studio hours/i }))
+
+    expect(await screen.findByText(/saved the studio hours/i)).toBeInTheDocument()
+    expect(updateSiteHours).toHaveBeenCalledWith(expect.objectContaining({
+      thu: expect.objectContaining({ open: '18:00', close: '21:00' }),
+    }))
   })
 
   it('reports an ID the profile check turned down', async () => {
