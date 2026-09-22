@@ -4,6 +4,7 @@ import {
   SERVICES,
   SERVICE_CATEGORIES,
   SERVICE_OPTION_GROUPS,
+  buildServiceOptionGroups,
   getDefaultServiceOption,
   getServiceOptionValue,
 } from './services'
@@ -216,5 +217,57 @@ describe('booking options derived from the menu', () => {
         expect(option.label, option.value).toMatch(/\(\$\d+/)
       }
     }
+  })
+})
+
+describe('booking options built from a live catalog', () => {
+  /** The menu as an admin might leave it: a rename, an addition, a removal. */
+  const editedMenu: ServiceItem[] = [
+    {
+      id: 'acrylic-full-set',
+      category: 'acrylic-sets',
+      title: 'Acrylic Full Set Deluxe',
+      price: '$30+',
+      duration: '90 min',
+      desc: 'Sculpted acrylic extensions.',
+      variants: [{ label: 'Short (0–2)', price: '$30' }],
+    },
+    {
+      id: 'added-removable-set',
+      category: 'add-ons',
+      title: 'Removable Set',
+      price: '$8',
+      duration: '15 min',
+      desc: 'A take-home set.',
+      variants: [],
+    },
+  ]
+
+  it('follows the saved catalog instead of the published list', () => {
+    const groups = buildServiceOptionGroups(editedMenu)
+    const values = groups.flatMap((group) => group.options.map((option) => option.value))
+
+    expect(values).toEqual(['Acrylic Full Set Deluxe — Short (0–2)', 'Removable Set'])
+    // A renamed service must not keep answering to its old option.
+    expect(values).not.toContain(getDefaultServiceOption(SERVICES[0]))
+    // A removed service must not stay selectable either.
+    expect(values).not.toContain('Gel Manicure')
+  })
+
+  it('books a service at its flat price when its options were all deleted', () => {
+    const groups = buildServiceOptionGroups(editedMenu)
+
+    // `Add-Ons` is the last published category, which is where the new service sits.
+    expect(groups[groups.length - 1].label).toBe('Add-Ons')
+    expect(groups[groups.length - 1].options).toEqual([
+      { value: 'Removable Set', label: 'Removable Set ($8)' },
+    ])
+  })
+
+  it('only shows the categories the catalog keeps', () => {
+    const groups = buildServiceOptionGroups(SERVICES, [SERVICE_CATEGORIES[2]])
+
+    expect(groups.map((group) => group.label)).toEqual(['Gel Manicure'])
+    expect(groups[0].options.map((option) => option.value)).toEqual(['Gel Manicure'])
   })
 })

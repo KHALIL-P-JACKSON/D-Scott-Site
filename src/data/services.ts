@@ -1,4 +1,5 @@
 import type {
+  PricingCatalog,
   ServiceCategoryMeta,
   ServiceItem,
   ServiceOptionGroup,
@@ -130,17 +131,49 @@ export function getDefaultServiceOption(service: ServiceItem): string {
   return getServiceOptionValue(service, firstVariant)
 }
 
-// Booking form options are generated from the menu so pricing never drifts out of sync.
-export const SERVICE_OPTION_GROUPS: ServiceOptionGroup[] = SERVICE_CATEGORIES.map((category) => ({
-  label: category.label,
-  options: SERVICES.filter((service) => service.category === category.id).flatMap((service) => {
-    if (!service.variants) {
-      return [{ value: service.title, label: `${service.title} (${service.price})` }]
-    }
+/**
+ * The reverse of `getServiceOptionValue`: the menu item a booking option came
+ * from. Returns undefined for anything the menu does not offer.
+ */
+export function getServiceByOptionValue(value: string): ServiceItem | undefined {
+  return SERVICES.find(
+    (service) =>
+      getServiceOptionValue(service) === value ||
+      (service.variants ?? []).some((variant) => getServiceOptionValue(service, variant) === value),
+  )
+}
 
-    return service.variants.map((variant) => {
-      const value = getServiceOptionValue(service, variant)
-      return { value, label: `${value} (${variant.price})` }
-    })
-  }),
-}))
+/**
+ * Booking form options are generated from the menu so pricing never drifts out of
+ * sync with it. Pass the live catalog to pick up admin edits.
+ */
+export function buildServiceOptionGroups(
+  services: ServiceItem[],
+  categories: ServiceCategoryMeta[] = SERVICE_CATEGORIES,
+): ServiceOptionGroup[] {
+  return categories.map((category) => ({
+    label: category.label,
+    options: services
+      .filter((service) => service.category === category.id)
+      .flatMap((service) => {
+        const variants = service.variants ?? []
+
+        // A service with no options is booked by title at its flat price.
+        if (variants.length === 0) {
+          return [{ value: service.title, label: `${service.title} (${service.price})` }]
+        }
+
+        return variants.map((variant) => {
+          const value = getServiceOptionValue(service, variant)
+          return { value, label: `${value} (${variant.price})` }
+        })
+      }),
+  }))
+}
+
+export const SERVICE_OPTION_GROUPS: ServiceOptionGroup[] = buildServiceOptionGroups(SERVICES)
+
+export const DEFAULT_PRICING_CATALOG: PricingCatalog = {
+  categories: SERVICE_CATEGORIES,
+  services: SERVICES,
+}
