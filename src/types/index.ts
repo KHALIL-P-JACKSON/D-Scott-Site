@@ -59,3 +59,74 @@ export interface BookingFormData {
   time: string
   notes: string
 }
+
+export type DayOfWeek = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
+
+export interface SiteDayHours {
+  closed: boolean
+  open: string
+  close: string
+}
+
+export interface SiteHours {
+  mon: SiteDayHours
+  tue: SiteDayHours
+  wed: SiteDayHours
+  thu: SiteDayHours
+  fri: SiteDayHours
+  sat: SiteDayHours
+  sun: SiteDayHours
+}
+
+export interface PricingCatalog {
+  categories: ServiceCategoryMeta[]
+  services: ServiceItem[]
+}
+
+/**
+ * Verification state of a client's ID. Stored by Postgres as `public.id_status`,
+ * so the literals must stay in step with `supabase/schema.sql`.
+ */
+export type IdStatus = 'unverified' | 'pending' | 'approved' | 'rejected'
+
+/** Matches the `booking_time_slot` enum, and the booking form's own options. */
+export type BookingTimeSlot = 'morning' | 'afternoon' | 'evening'
+
+/** A row of `public.profiles`, snake_case exactly as Postgres returns it. */
+export interface Profile {
+  id: string
+  full_name: string | null
+  phone: string | null
+  is_admin: boolean
+  id_status: IdStatus
+  id_path: string | null
+  id_uploaded_at: string | null
+  id_review_notes: string | null
+}
+
+/** The signed-in visitor: the session plus the profile row that goes with it. */
+export interface AccountSnapshot {
+  userId: string
+  email: string
+  profile: Profile | null
+}
+
+export interface SignUpFields {
+  fullName: string
+  email: string
+  password: string
+  confirmPassword: string
+  phone: string
+}
+
+export interface SignInFields {
+  email: string
+  password: string
+}
+
+export interface BookingRequestInput {
+  serviceOption: string
+  preferredDate: string
+  timeSlot: BookingTimeSlot
+  notes: string
+}
