@@ -9,6 +9,12 @@ updates:
       # Twice a week: Mondays and Thursdays at 08:00 UTC (default timezone).
       interval: "cron"
       cronjob: "0 8 * * 1,4"
+    # The coverage provider requires the exact Vitest version. Update both together.
+    groups:
+      vitest:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
     open-pull-requests-limit: 10
     labels:
       - "dependencies"

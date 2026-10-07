@@ -19,11 +19,16 @@ npm run dev
 | `npm run build` | Typecheck, then build to `dist/` |
 | `npm run preview` | Serve the production build locally |
 | `npm run lint` | ESLint |
-| `npm run typecheck` | `tsc -b` across the app, test and config projects |
+| `npm run typecheck` | TypeScript 7 `tsc -b` across the app, test and config projects |
 | `npm test` | Run the test suite once |
 | `npm run test:watch` | Re-run tests on change |
 | `npm run test:coverage` | Tests plus coverage thresholds |
 | `npm run verify` | lint + typecheck + test — run this before pushing |
+
+Typechecking and builds use TypeScript 7 through the `typescript-compiler` npm
+alias. ESLint still uses the TypeScript 6 JavaScript API through `typescript`,
+because `typescript-eslint` does not yet support TypeScript 7. Run the npm scripts
+above to select the compiler explicitly; a bare `tsc` may select either package.
 
 ## Where the content lives
 
