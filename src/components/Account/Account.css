@@ -1,0 +1,35 @@
+.radix-account-section {
+  padding: 110px 16px 80px;
+  background: var(--gray-a2);
+  min-height: 60vh;
+}
+
+.account-heading {
+  font-family: var(--font-serif);
+}
+
+.account-intro {
+  max-width: 620px;
+  line-height: 1.6;
+}
+
+.account-card {
+  border-radius: var(--radius-5);
+  box-shadow: var(--shadow-4);
+  border: 1px solid var(--gray-a4);
+}
+
+.account-file-input {
+  font: inherit;
+  padding: 10px 12px;
+  border-radius: var(--radius-3);
+  border: 1px solid var(--gray-a6);
+  background: var(--color-panel-solid);
+  color: inherit;
+  cursor: pointer;
+}
+
+.account-file-input:focus-visible {
+  outline: 2px solid var(--ruby-9);
+  outline-offset: 1px;
+}

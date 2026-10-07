@@ -54,6 +54,18 @@
 
 .booking-success-callout {
   padding: 24px;
+
+/* The account gate that stands in for the form until an ID is on file. */
+.booking-gate-callout {
+  border-radius: var(--radius-4);
+}
+
+.booking-gate-link {
+  color: var(--ruby-11);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
 }
 
 /* Mirrors `Callout.Text`, which cannot legally wrap a heading and paragraphs. */
