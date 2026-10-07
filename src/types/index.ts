@@ -60,6 +60,29 @@ export interface BookingFormData {
   notes: string
 }
 
+export type DayOfWeek = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
+
+export interface SiteDayHours {
+  closed: boolean
+  open: string
+  close: string
+}
+
+export interface SiteHours {
+  mon: SiteDayHours
+  tue: SiteDayHours
+  wed: SiteDayHours
+  thu: SiteDayHours
+  fri: SiteDayHours
+  sat: SiteDayHours
+  sun: SiteDayHours
+}
+
+export interface PricingCatalog {
+  categories: ServiceCategoryMeta[]
+  services: ServiceItem[]
+}
+
 /**
  * Verification state of a client's ID. Stored by Postgres as `public.id_status`,
  * so the literals must stay in step with `supabase/schema.sql`.
