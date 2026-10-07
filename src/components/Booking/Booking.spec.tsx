@@ -1,7 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '../../test/render'
-import type { AccountSnapshot } from '../../types'
-import { loadAccount } from '../../lib/account'
+import { act, fireEvent, render, screen } from '../../test/render'
+import type { AccountSnapshot, PricingCatalog } from '../../types'
+import { DEFAULT_PRICING_CATALOG } from '../../data/services'
+import {
+  DEFAULT_SITE_HOURS,
+  loadAccount,
+  loadPricingCatalog,
+  readPricingCatalog,
+  readSiteHours,
+} from '../../lib/account'
 import { createBookingRequest } from '../../lib/bookings'
 import { Booking } from './Booking'
 
@@ -16,7 +23,13 @@ const ACRYLIC_SHORT = 'Acrylic Full Set — Short (0–2)'
 vi.mock('../../lib/account', async () => {
   const actual = await vi.importActual<typeof import('../../lib/account')>('../../lib/account')
 
-  return { ...actual, loadAccount: vi.fn() }
+  return {
+    ...actual,
+    loadAccount: vi.fn(),
+    loadPricingCatalog: vi.fn(),
+    readPricingCatalog: vi.fn(),
+    readSiteHours: vi.fn(),
+  }
 })
 
 vi.mock('../../lib/bookings', async () => {
@@ -42,8 +55,16 @@ const verifiedAccount: AccountSnapshot = {
 
 beforeEach(() => {
   vi.mocked(loadAccount).mockReset()
+  vi.mocked(loadPricingCatalog).mockReset()
+  vi.mocked(readPricingCatalog).mockReset()
+  vi.mocked(readSiteHours).mockReset()
   vi.mocked(createBookingRequest).mockReset()
   vi.mocked(loadAccount).mockResolvedValue({ status: 'ok', account: verifiedAccount })
+  // The app reads the browser copy synchronously and the database copy on mount;
+  // specs stub both so no test depends on real storage or the network.
+  vi.mocked(readPricingCatalog).mockReturnValue(DEFAULT_PRICING_CATALOG)
+  vi.mocked(readSiteHours).mockReturnValue(DEFAULT_SITE_HOURS)
+  vi.mocked(loadPricingCatalog).mockImplementation(async () => readPricingCatalog())
   vi.mocked(createBookingRequest).mockResolvedValue({ error: null })
 })
 
@@ -304,5 +325,70 @@ describe('Booking', () => {
     fireEvent.click(retryButton)
 
     expect(await screen.findByLabelText(/full name/i)).toBeInTheDocument()
+  })
+
+  /**
+   * The menu an admin can leave behind: one service renamed and re-priced, every
+   * other published entry removed.
+   */
+  const savedMenu: PricingCatalog = {
+    categories: [{ id: 'gel-manicure', label: 'Gel Manicure', color: 'purple' }],
+    services: [
+      {
+        id: 'gel-manicure',
+        category: 'gel-manicure',
+        title: 'Gel Manicure',
+        price: '$30',
+        duration: '45 min',
+        desc: 'Gel polish finished with chrome.',
+        variants: [{ label: 'Chrome gel', price: '$30' }],
+      },
+    ],
+  }
+
+  /** Every value Radix mirrors into the hidden native `<select>` it submits. */
+  function optionValues(container: HTMLElement): string[] {
+    return Array.from(container.querySelectorAll('select')).flatMap((select) =>
+      Array.from(select.options).map((option) => option.value),
+    )
+  }
+
+  it('offers only the services still on the saved menu', async () => {
+    vi.mocked(readPricingCatalog).mockReturnValue(savedMenu)
+
+    const { container } = await setup()
+
+    expect(optionValues(container)).toContain('Gel Manicure — Chrome gel')
+    expect(optionValues(container)).not.toContain(ACRYLIC_SHORT)
+  })
+
+  it('picks up a menu the studio saved without a reload', async () => {
+    const { container } = await setup()
+    expect(optionValues(container)).toContain(ACRYLIC_SHORT)
+
+    vi.mocked(readPricingCatalog).mockReturnValue(savedMenu)
+    act(() => {
+      window.dispatchEvent(new Event('dscott-pricing-updated'))
+    })
+
+    expect(optionValues(container)).toContain('Gel Manicure — Chrome gel')
+    expect(optionValues(container)).not.toContain(ACRYLIC_SHORT)
+  })
+
+  it('picks up studio hours the admin saved without a reload', async () => {
+    await setup()
+    expect(screen.getByText('Mon - Wed: Closed')).toBeInTheDocument()
+
+    vi.mocked(readSiteHours).mockReturnValue({
+      ...DEFAULT_SITE_HOURS,
+      mon: { closed: false, open: '10:00', close: '14:00' },
+    })
+    act(() => {
+      window.dispatchEvent(new Event('dscott-site-hours-updated'))
+    })
+
+    expect(screen.getByText('Monday: 10:00 AM – 2:00 PM')).toBeInTheDocument()
+    expect(screen.getByText('Tue - Wed: Closed')).toBeInTheDocument()
+    expect(screen.queryByText('Mon - Wed: Closed')).not.toBeInTheDocument()
   })
 })

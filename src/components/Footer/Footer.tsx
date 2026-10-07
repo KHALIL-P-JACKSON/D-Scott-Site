@@ -1,8 +1,45 @@
+import { useEffect, useState } from 'react'
 import { Container, Grid, Flex, Heading, Text, Separator } from '@radix-ui/themes'
 import { MapPin, Phone, Mail, Camera } from 'lucide-react'
+import { DEFAULT_SITE_HOURS, loadSiteHours, openDayLabels, readSiteHours, siteHoursRows } from '../../lib/account'
 import './Footer.css'
 
 export function Footer() {
+  const [siteHours, setSiteHours] = useState(DEFAULT_SITE_HOURS)
+
+  // Walk-ins ride on the same schedule as the hours list above, so an admin who
+  // closes a day never leaves a stale day range on the footer.
+  const walkInDays = openDayLabels(siteHours)
+
+  useEffect(() => {
+    let active = true
+
+    const apply = async () => {
+      const next = await loadSiteHours()
+
+      if (active) {
+        setSiteHours(next)
+      }
+    }
+
+    void apply()
+
+    // A local save fires while the matching database write is still in flight, so
+    // apply the browser copy the editor just wrote rather than racing the row.
+    const handleUpdate = () => {
+      if (active) {
+        setSiteHours(readSiteHours())
+      }
+    }
+
+    window.addEventListener('dscott-site-hours-updated', handleUpdate)
+
+    return () => {
+      active = false
+      window.removeEventListener('dscott-site-hours-updated', handleUpdate)
+    }
+  }, [])
+
   return (
     <footer className="radix-footer">
       <Container size="4">
@@ -41,12 +78,16 @@ export function Footer() {
               Studio Hours
             </Heading>
             <Flex direction="column" gap="1">
-              <Text size="2" className="footer-hour-row">Mon - Wed: Closed</Text>
-              <Text size="2" className="footer-hour-row">Thursday: 5:00pm - 8:00pm</Text>
-              <Text size="2" className="footer-hour-row">Friday: 8:00am - 5:00pm</Text>
-              <Text size="2" className="footer-hour-row">Saturday: 8:00am - 6:00pm</Text>
-              <Text size="2" className="footer-hour-row">Sunday: 8:00am - 6:00pm</Text>
-              <Text size="2" className="footer-highlight">Walk-ins Welcome Thu–Sun</Text>
+              {siteHoursRows(siteHours).map(({ label, value }) => (
+                <Text key={label} size="2" className="footer-hour-row">
+                  {label}: {value}
+                </Text>
+              ))}
+              <Text size="2" className="footer-highlight">
+                {walkInDays.length > 0
+                  ? `Walk-ins Welcome ${walkInDays.join(', ')}`
+                  : 'Walk-ins by appointment only'}
+              </Text>
             </Flex>
           </Flex>
 

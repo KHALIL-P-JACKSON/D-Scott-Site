@@ -24,8 +24,8 @@ import {
   ShieldCheck,
   AlertCircle,
 } from 'lucide-react'
-import { SERVICE_OPTION_GROUPS } from '../../data/services'
-import { loadAccount } from '../../lib/account'
+import { buildServiceOptionGroups } from '../../data/services'
+import { loadAccount, loadPricingCatalog, readPricingCatalog, readSiteHours, siteHoursRows } from '../../lib/account'
 import { bookingGate, createBookingRequest } from '../../lib/bookings'
 import type { AccountSnapshot, BookingFormData, BookingTimeSlot } from '../../types'
 import './Booking.css'
@@ -45,6 +45,9 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
   const [loadingAccount, setLoadingAccount] = useState(true)
   const [accountError, setAccountError] = useState('')
   const [accountRevision, setAccountRevision] = useState(0)
+  const [siteHours, setSiteHours] = useState(readSiteHours)
+  const [catalog, setCatalog] = useState(readPricingCatalog)
+  const optionGroups = buildServiceOptionGroups(catalog.services, catalog.categories)
   const [formData, setFormData] = useState<BookingFormData>({
     name: '',
     phone: '',
@@ -93,6 +96,44 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
       active = false
     }
   }, [accountRevision])
+
+  // The hours and the price list live in the browser as well as in the database,
+  // so follow the events the admin editors fire rather than a stale render.
+  useEffect(() => {
+    const handleUpdate = () => setSiteHours(readSiteHours())
+
+    window.addEventListener('dscott-site-hours-updated', handleUpdate)
+
+    return () => window.removeEventListener('dscott-site-hours-updated', handleUpdate)
+  }, [])
+
+  useEffect(() => {
+    let active = true
+
+    const apply = async () => {
+      const next = await loadPricingCatalog()
+
+      if (active) {
+        setCatalog(next)
+      }
+    }
+
+    void apply()
+
+    // Follow the local save instead of re-reading the row the admin just wrote.
+    const handleUpdate = () => {
+      if (active) {
+        setCatalog(readPricingCatalog())
+      }
+    }
+
+    window.addEventListener('dscott-pricing-updated', handleUpdate)
+
+    return () => {
+      active = false
+      window.removeEventListener('dscott-pricing-updated', handleUpdate)
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -190,11 +231,11 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
                     </Flex>
                     <Flex direction="column">
                       <Text size="2" weight="bold" className="side-info-label">Studio Hours</Text>
-                      <Text size="2" className="side-info-val">Mon - Wed: Closed</Text>
-                      <Text size="2" className="side-info-val">Thursday: 5:00 PM – 8:00 PM</Text>
-                      <Text size="2" className="side-info-val">Friday: 8:00 AM – 5:00 PM</Text>
-                      <Text size="2" className="side-info-val">Saturday: 8:00 AM – 6:00 PM</Text>
-                      <Text size="2" className="side-info-val">Sunday: 8:00 AM – 6:00 PM</Text>
+                      {siteHoursRows(siteHours).map(({ label, value }) => (
+                        <Text key={label} size="2" className="side-info-val">
+                          {label}: {value}
+                        </Text>
+                      ))}
                     </Flex>
                   </Flex>
 
@@ -355,7 +396,7 @@ export function Booking({ selectedService, onServiceChange, onClearSelectedServi
                       >
                         <Select.Trigger aria-labelledby="booking-service-label" placeholder="Choose Nail Service" />
                         <Select.Content position="popper">
-                          {SERVICE_OPTION_GROUPS.map((group, index) => (
+                          {optionGroups.map((group, index) => (
                             <Fragment key={group.label}>
                               {index > 0 ? <Select.Separator /> : null}
                               <Select.Group>
