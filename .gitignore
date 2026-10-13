@@ -13,6 +13,10 @@ dist-ssr
 coverage
 *.local
 
+# Personal agent settings (shared skill and workflow files stay tracked)
+.codex/hooks.json
+.impeccable/config.local.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
