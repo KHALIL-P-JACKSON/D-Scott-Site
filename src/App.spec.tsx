@@ -105,9 +105,8 @@ describe('the page as a whole', () => {
     setMediaQueryMatches(PREFERS_REDUCED_MOTION, true)
     const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView')
     render(<App />)
-    await screen.findByLabelText(/full name/i)
-
-    fireEvent.click(screen.getByRole('button', { name: /book from \$25/i }))
+    const selectService = await screen.findByRole('button', { name: /book from \$25/i })
+    fireEvent.click(selectService)
 
     expect(scrollIntoView).toHaveBeenLastCalledWith({ behavior: 'auto' })
   })

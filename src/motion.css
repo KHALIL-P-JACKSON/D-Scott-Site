@@ -204,6 +204,11 @@
   background: rgb(255 255 255 / 20%);
 }
 
+/* Swapping the icon must not create a new hover entry on the gallery. */
+.hero-carousel-playback svg {
+  pointer-events: none;
+}
+
 .hero-carousel-playback:focus-visible {
   outline: 2px solid white;
   outline-offset: 2px;

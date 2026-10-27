@@ -20,7 +20,7 @@ export function HeroCarousel({
   const galleryRef = useRef<HTMLElement>(null)
   const [isHovered, setIsHovered] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
-  const [isManuallyPaused, setIsManuallyPaused] = useState(false)
+  const [playback, setPlayback] = useState<'auto' | 'playing' | 'paused'>('auto')
   const [isOffscreen, setIsOffscreen] = useState(false)
   const [isTabHidden, setIsTabHidden] = useState(false)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(
@@ -30,9 +30,14 @@ export function HeroCarousel({
   )
 
   const slideCount = slides.length
-  // Pause the timer while the visitor hovers/focuses the gallery, while the tab
-  // is in the background, and entirely when reduced motion is requested.
-  const isPaused = isHovered || isFocused || isManuallyPaused || isOffscreen || isTabHidden || prefersReducedMotion
+  // An explicit Play request takes effect even while its control has focus.
+  // A new hover/focus interaction returns to the normal automatic pause policy.
+  const isInteractionPaused = playback !== 'playing' && (isHovered || isFocused)
+  const isPaused = playback === 'paused' || isInteractionPaused || isOffscreen || isTabHidden || prefersReducedMotion
+
+  const resumeAutomaticPausing = () => {
+    setPlayback((current) => current === 'playing' ? 'auto' : current)
+  }
 
   const goToNext = useCallback(() => {
     setActiveIndex((previous) => (previous + 1) % Math.max(slideCount, 1))
@@ -98,9 +103,15 @@ export function HeroCarousel({
       className="hero-carousel"
       aria-roledescription="carousel"
       aria-label="Recent nail sets from the studio"
-      onMouseEnter={() => setIsHovered(true)}
+      onMouseEnter={() => {
+        setIsHovered(true)
+        resumeAutomaticPausing()
+      }}
       onMouseLeave={() => setIsHovered(false)}
-      onFocusCapture={() => setIsFocused(true)}
+      onFocusCapture={() => {
+        setIsFocused(true)
+        resumeAutomaticPausing()
+      }}
       onBlurCapture={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setIsFocused(false)
       }}
@@ -147,10 +158,10 @@ export function HeroCarousel({
           <button
             type="button"
             className="hero-carousel-playback"
-            onClick={() => setIsManuallyPaused((paused) => !paused)}
-            aria-label={isManuallyPaused ? 'Play slideshow' : 'Pause slideshow'}
+            onClick={() => setPlayback((current) => current === 'paused' ? 'playing' : 'paused')}
+            aria-label={playback === 'paused' ? 'Play slideshow' : 'Pause slideshow'}
           >
-            {isManuallyPaused ? <Play size={14} /> : <Pause size={14} />}
+            {playback === 'paused' ? <Play size={14} /> : <Pause size={14} />}
           </button>
         )}
         <div className="hero-carousel-dots">

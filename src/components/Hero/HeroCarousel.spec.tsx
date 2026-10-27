@@ -118,6 +118,27 @@ describe('HeroCarousel', () => {
     expect(activeIndex()).toBe(1)
   })
 
+  it('honors Play while the pointer and keyboard focus remain on the gallery', () => {
+    const { activeIndex, figure, tick } = setup()
+    const playback = screen.getByRole('button', { name: 'Pause slideshow' })
+    fireEvent.mouseOver(figure() as Element)
+    fireEvent.focus(playback)
+    fireEvent.click(playback)
+    tick(2)
+    expect(activeIndex()).toBe(0)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Play slideshow' }))
+    tick()
+    expect(activeIndex()).toBe(1)
+
+    // A new interaction should pause rotation again, rather than retaining an
+    // override after the visitor leaves and returns to inspect a photo.
+    fireEvent.mouseOut(figure() as Element)
+    fireEvent.mouseOver(figure() as Element)
+    tick(2)
+    expect(activeIndex()).toBe(1)
+  })
+
   it('stays paused when the pointer leaves but keyboard focus remains', () => {
     const { activeIndex, figure, tick } = setup()
     const next = screen.getByRole('button', { name: /show next photo/i })
