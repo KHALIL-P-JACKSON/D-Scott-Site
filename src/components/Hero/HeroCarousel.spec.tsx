@@ -36,6 +36,7 @@ describe('HeroCarousel', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+    vi.unstubAllGlobals()
   })
 
   it('opens on the first photo', () => {
@@ -103,6 +104,80 @@ describe('HeroCarousel', () => {
     // The previous arrow should wrap around from the first photo.
     fireEvent.click(screen.getByRole('button', { name: /show previous photo/i }))
     expect(activeIndex()).toBe(2)
+  })
+
+  it('keeps a manual pause until the visitor explicitly resumes', () => {
+    const { activeIndex, tick } = setup()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Pause slideshow' }))
+    tick(5)
+    expect(activeIndex()).toBe(0)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Play slideshow' }))
+    tick()
+    expect(activeIndex()).toBe(1)
+  })
+
+  it('honors Play while the pointer and keyboard focus remain on the gallery', () => {
+    const { activeIndex, figure, tick } = setup()
+    const playback = screen.getByRole('button', { name: 'Pause slideshow' })
+    fireEvent.mouseOver(figure() as Element)
+    fireEvent.focus(playback)
+    fireEvent.click(playback)
+    tick(2)
+    expect(activeIndex()).toBe(0)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Play slideshow' }))
+    tick()
+    expect(activeIndex()).toBe(1)
+
+    // A new interaction should pause rotation again, rather than retaining an
+    // override after the visitor leaves and returns to inspect a photo.
+    fireEvent.mouseOut(figure() as Element)
+    fireEvent.mouseOver(figure() as Element)
+    tick(2)
+    expect(activeIndex()).toBe(1)
+  })
+
+  it('stays paused when the pointer leaves but keyboard focus remains', () => {
+    const { activeIndex, figure, tick } = setup()
+    const next = screen.getByRole('button', { name: /show next photo/i })
+
+    fireEvent.focus(next)
+    fireEvent.mouseOver(figure() as Element)
+    fireEvent.mouseOut(figure() as Element)
+    tick(3)
+    expect(activeIndex()).toBe(0)
+
+    fireEvent.blur(next)
+    tick()
+    expect(activeIndex()).toBe(1)
+  })
+
+  it('stops offscreen and releases its observer on unmount', () => {
+    let notify!: (visible: boolean) => void
+    const disconnect = vi.fn()
+    vi.stubGlobal('IntersectionObserver', class {
+      constructor(callback: IntersectionObserverCallback) {
+        notify = (visible) => callback(
+          [{ isIntersecting: visible } as IntersectionObserverEntry],
+          this as unknown as IntersectionObserver,
+        )
+      }
+      observe() {}
+      disconnect = disconnect
+    })
+    const { activeIndex, tick, unmount } = setup()
+
+    act(() => notify(false))
+    tick(5)
+    expect(activeIndex()).toBe(0)
+
+    act(() => notify(true))
+    tick()
+    expect(activeIndex()).toBe(1)
+    unmount()
+    expect(disconnect).toHaveBeenCalledOnce()
   })
 
   it('jumps to the photo whose dot is chosen', () => {
