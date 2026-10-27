@@ -32,11 +32,6 @@ jobs:
           node-version: 22
           cache: 'npm'
 
-      - name: Inspect React DOM and Zod patch metadata
-        run: |
-          npm view react-dom@19.3.1 version dist dependencies peerDependencies engines --json
-          npm view zod@4.6.6 version dist --json
-
       - name: Install dependencies
         run: npm ci
 
