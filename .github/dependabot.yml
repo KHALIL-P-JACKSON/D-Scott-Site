@@ -9,8 +9,13 @@ updates:
       # Twice a week: Mondays and Thursdays at 08:00 UTC (default timezone).
       interval: "cron"
       cronjob: "0 8 * * 1,4"
-    # The coverage provider requires the exact Vitest version. Update both together.
+    # React and React DOM must resolve to the same version.
+    # The coverage provider also requires the exact Vitest version.
     groups:
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
       vitest:
         patterns:
           - "vitest"
