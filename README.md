@@ -4,6 +4,20 @@ Single-page marketing site for the nail studio: menu and pricing, recent work,
 reviews, and an appointment request form. Built with React + TypeScript + Vite,
 deployed to GitHub Pages.
 
+## Agent skills and project context
+
+- `PRODUCT.md` records the confirmed product brief and explicitly unconfirmed
+  business information for future design work.
+- `.agents/skills/ponytail/SKILL.md` contains the project-local Ponytail skill
+  from [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail), with
+  its MIT license alongside it. Invoke it with `$ponytail` in Codex.
+- `.impeccable/config.json` selects code-first design work, and
+  `.impeccable/live/config.json` targets the Vite `index.html` shell for live
+  iteration. The Impeccable skill itself must be installed separately.
+
+Personal hook commands and Impeccable consent settings remain local and are
+ignored by Git. No live helper script is injected into the shipped site.
+
 ## Getting started
 
 ```bash
