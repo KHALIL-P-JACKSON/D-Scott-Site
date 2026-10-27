@@ -12,6 +12,7 @@ import {
 } from './components'
 import { parseRoute, sectionIdFromHash, type Route } from './lib/router'
 import './App.css'
+import './motion.css'
 
 function App() {
   const [selectedService, setSelectedService] = useState<string>('')
@@ -37,7 +38,9 @@ function App() {
     const sectionId = sectionIdFromHash(window.location.hash)
 
     if (sectionId) {
-      document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' })
+      document.getElementById(sectionId)?.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      })
     }
   }, [route])
 
@@ -45,7 +48,9 @@ function App() {
     setSelectedService(title)
     const bookingElement = document.getElementById('booking')
     if (bookingElement) {
-      bookingElement.scrollIntoView({ behavior: 'smooth' })
+      bookingElement.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      })
     }
   }
 
