@@ -49,21 +49,32 @@
   text-decoration: none;
 }
 
-@media (max-width: 768px) {
-  .radix-navbar {
-    overflow-x: hidden;
-  }
+.radix-mobile-menu-trigger {
+  display: none;
+  min-height: 44px;
+}
 
-  .radix-nav-links {
+.radix-mobile-menu-content {
+  z-index: 101;
+  min-width: 240px;
+  max-width: calc(100vw - 32px);
+}
+
+.radix-mobile-menu-content .rt-DropdownMenuItem {
+  min-height: 44px;
+}
+
+@media (max-width: 1100px) {
+  .radix-nav-links,
+  .radix-nav-actions {
     display: none;
   }
 
-  .phone-text {
-    display: none;
+  .radix-mobile-menu-trigger {
+    display: inline-flex;
   }
 
   .radix-navbar-row {
-    flex-wrap: wrap;
-    row-gap: 8px;
+    gap: 12px;
   }
 }

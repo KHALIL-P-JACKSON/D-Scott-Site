@@ -9,12 +9,23 @@ updates:
       # Twice a week: Mondays and Thursdays at 08:00 UTC (default timezone).
       interval: "cron"
       cronjob: "0 8 * * 1,4"
-    # The coverage provider requires the exact Vitest version. Update both together.
+    # React and React DOM must resolve to the same version.
+    # The coverage provider also requires the exact Vitest version.
     groups:
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
       vitest:
         patterns:
           - "vitest"
           - "@vitest/*"
+    # The TypeScript 6 API is required by typescript-eslint. Builds already use
+    # TypeScript 7 via typescript-compiler; keep that alias eligible for updates.
+    # Remove this rule once typescript-eslint supports the TypeScript 7 API.
+    ignore:
+      - dependency-name: "typescript"
+        versions: [">=7.0.0 <8.0.0"]
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
