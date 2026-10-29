@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react'
 import { HERO_SLIDES } from '../../data/heroSlides'
 import type { HeroSlide } from '../../types'
 import './HeroCarousel.css'
@@ -17,7 +17,11 @@ export function HeroCarousel({
   intervalMs = AUTOPLAY_MS,
 }: HeroCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0)
-  const [isInteracting, setIsInteracting] = useState(false)
+  const galleryRef = useRef<HTMLElement>(null)
+  const [isHovered, setIsHovered] = useState(false)
+  const [isFocused, setIsFocused] = useState(false)
+  const [playback, setPlayback] = useState<'auto' | 'playing' | 'paused'>('auto')
+  const [isOffscreen, setIsOffscreen] = useState(false)
   const [isTabHidden, setIsTabHidden] = useState(false)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(
     () =>
@@ -26,9 +30,14 @@ export function HeroCarousel({
   )
 
   const slideCount = slides.length
-  // Pause the timer while the visitor hovers/focuses the gallery, while the tab
-  // is in the background, and entirely when reduced motion is requested.
-  const isPaused = isInteracting || isTabHidden || prefersReducedMotion
+  // An explicit Play request takes effect even while its control has focus.
+  // A new hover/focus interaction returns to the normal automatic pause policy.
+  const isInteractionPaused = playback !== 'playing' && (isHovered || isFocused)
+  const isPaused = playback === 'paused' || isInteractionPaused || isOffscreen || isTabHidden || prefersReducedMotion
+
+  const resumeAutomaticPausing = () => {
+    setPlayback((current) => current === 'playing' ? 'auto' : current)
+  }
 
   const goToNext = useCallback(() => {
     setActiveIndex((previous) => (previous + 1) % Math.max(slideCount, 1))
@@ -47,7 +56,18 @@ export function HeroCarousel({
 
     const timer = window.setInterval(goToNext, intervalMs)
     return () => window.clearInterval(timer)
-  }, [goToNext, intervalMs, isPaused, slideCount])
+  }, [activeIndex, goToNext, intervalMs, isPaused, slideCount])
+
+  useEffect(() => {
+    if (!galleryRef.current || typeof IntersectionObserver === 'undefined') return
+
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsOffscreen(!entry.isIntersecting)
+    }, { threshold: 0.1 })
+
+    observer.observe(galleryRef.current)
+    return () => observer.disconnect()
+  }, [slideCount])
 
   useEffect(() => {
     const handleVisibilityChange = () => setIsTabHidden(document.hidden)
@@ -79,13 +99,22 @@ export function HeroCarousel({
 
   return (
     <figure
+      ref={galleryRef}
       className="hero-carousel"
       aria-roledescription="carousel"
       aria-label="Recent nail sets from the studio"
-      onMouseEnter={() => setIsInteracting(true)}
-      onMouseLeave={() => setIsInteracting(false)}
-      onFocusCapture={() => setIsInteracting(true)}
-      onBlurCapture={() => setIsInteracting(false)}
+      onMouseEnter={() => {
+        setIsHovered(true)
+        resumeAutomaticPausing()
+      }}
+      onMouseLeave={() => setIsHovered(false)}
+      onFocusCapture={() => {
+        setIsFocused(true)
+        resumeAutomaticPausing()
+      }}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setIsFocused(false)
+      }}
     >
       <div className="hero-carousel-stage">
         {slides.map((slide, index) => {
@@ -125,6 +154,16 @@ export function HeroCarousel({
       </button>
 
       <div className="hero-carousel-controls">
+        {!prefersReducedMotion && slideCount > 1 && (
+          <button
+            type="button"
+            className="hero-carousel-playback"
+            onClick={() => setPlayback((current) => current === 'paused' ? 'playing' : 'paused')}
+            aria-label={playback === 'paused' ? 'Play slideshow' : 'Pause slideshow'}
+          >
+            {playback === 'paused' ? <Play size={14} /> : <Pause size={14} />}
+          </button>
+        )}
         <div className="hero-carousel-dots">
           {slides.map((slide, index) => (
             <button
@@ -142,11 +181,11 @@ export function HeroCarousel({
         </span>
       </div>
 
-      <figcaption className="hero-carousel-caption">{activeSlide.caption}</figcaption>
+      <figcaption key={activeSlide.src} className="hero-carousel-caption">{activeSlide.caption}</figcaption>
 
       <span
         className="hero-carousel-progress"
-        key={activeIndex}
+        key={`${activeIndex}-${isPaused}`}
         style={{
           animationDuration: `${intervalMs}ms`,
           animationPlayState: isPaused ? 'paused' : 'running',

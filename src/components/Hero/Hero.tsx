@@ -28,7 +28,8 @@ export function Hero() {
             </div>
 
             <h1 className="radix-hero-title">
-              Acrylics, Gel &amp; Artistry. <span className="title-highlight">Pamper Your Nails.</span>
+              <span className="hero-title-intro">Acrylics, Gel &amp; Artistry.</span>{' '}
+              <span className="title-highlight">Pamper Your Nails.</span>
             </h1>
 
             <p className="radix-hero-desc">

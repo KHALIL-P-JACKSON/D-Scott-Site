@@ -77,7 +77,7 @@ export function Services({ onSelectService }: ServicesProps) {
             </Tabs.List>
           </Flex>
 
-          <Tabs.Content value={activeTab}>
+          <Tabs.Content key={activeTab} value={activeTab}>
             <Grid columns={{ initial: '1', sm: '2', md: '3' }} gap="5">
               {filteredServices.map((service) => {
                 const category = SERVICE_CATEGORIES.find((item) => item.id === service.category)

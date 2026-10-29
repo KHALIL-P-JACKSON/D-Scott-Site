@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from './test/render'
 import type { AccountSnapshot } from './types'
 import { loadAccount } from './lib/account'
 import App from './App'
+import { PREFERS_REDUCED_MOTION, setMediaQueryMatches } from './test/matchMedia'
 
 /**
  * `App` mounts the booking form, which waits on the account check. Sign these
@@ -98,5 +99,15 @@ describe('the page as a whole', () => {
       if (href === '#') continue
       expect(container.querySelector(href), `dead in-page link: ${href}`).toBeTruthy()
     }
+  })
+
+  it('moves directly to booking when reduced motion is requested', async () => {
+    setMediaQueryMatches(PREFERS_REDUCED_MOTION, true)
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView')
+    render(<App />)
+    const selectService = await screen.findByRole('button', { name: /book from \$25/i })
+    fireEvent.click(selectService)
+
+    expect(scrollIntoView).toHaveBeenLastCalledWith({ behavior: 'auto' })
   })
 })
